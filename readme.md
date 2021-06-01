@@ -31,7 +31,7 @@
 
 Apollo uses a number of open source projects to work properly:
 
-* [PyQt5] - Qt is a widget toolkit for creating graphical user interfaces as well as cross-platform applications that run on various software and hardware platforms such as Linux, Windows, macOS, Android or embedded systems
+* [PySide6] - Qt is a widget toolkit for creating graphical user interfaces as well as cross-platform applications that run on various software and hardware platforms such as Linux, Windows, macOS, Android or embedded systems
 * [mutagen] - Mutagen is a Python module to handle audio metadata.
 * [pyo] - Pyo is a Python module written in C to help digital signal processing script creation.
 
@@ -68,7 +68,7 @@ License
 
 
 [pyo]: <http://ajaxsoundstudio.com/software/pyo/>
-[PyQt5]: <https://www.qt.io/>
+[PySide6]: <https://www.qt.io/>
 [mutagen]: <https://mutagen.readthedocs.io/en/latest/>
 [Python3.8]: <https://www.python.org/>
 [GPL v3]: <https://github.com/UGLYclown999/Apollo/blob/master/LICENSE>
