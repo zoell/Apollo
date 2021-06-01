@@ -1,15 +1,24 @@
-import sys, os, re, datetime, re, hashlib, json, time, pathlib
+import sys
+import os
+import re
+import datetime
+import re
+import hashlib
+import json
+import time
+import pathlib
+
+sys.path.insert(0, r"D:\dev\Apollo-dev")
 
 import mutagen
-from PyQt5.QtSql import QSqlDatabase, QSqlQuery
-from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtCore import Qt
+from PySide6.QtSql import QSqlDatabase, QSqlQuery
+from PySide6 import QtWidgets, QtGui, QtCore
+from PySide6.QtCore import Qt
 
-from apollo.utils import exe_time, dedenter, ThreadIt
+from apollo import exe_time, dedenter, ThreadIt, PathUtils
 # from apollo.mediafile import MediaFile
-import apollo
+from apollo import PARENT_DIR
 
-root_path = apollo.__path__
 
 DBFIELDS = ["file_id", "path_id","file_name","file_path","album",
             "albumartist","artist","author","bpm","compilation",
@@ -22,7 +31,10 @@ DBFIELDS = ["file_id", "path_id","file_name","file_path","album",
             "frame_offset","layer","mode","padding","protected","sample_rate",
             "track_gain","track_peak", "rating", "playcount"]
 
-########################################################################################################################
+class DBStructureError(Exception): __module__ = "LibraryManager"
+class QueryBuildFailed(Exception): __module__ = "LibraryManager"
+class QueryExecutionFailed(Exception): __module__ = "LibraryManager"
+
 
 class DataBaseManager:
     """
@@ -35,62 +47,57 @@ class DataBaseManager:
         """
         self.db_fields = DBFIELDS
 
-    def connect(self, db, name = "ConnectionMain"): #Tested
+    def connect(self, db): #Tested
         """
         Uses the Database Driver to create a connection with a local
         database.If Db not avaliable will create new Db
 
         >>> library_manager.connect("default.db")
 
-        :Args:
+        Parameters
+        ----------
+        db : String
+            path of a Valid Database or a Database name in order to create a blank one
 
-            db: String
-                path of a Valid Database or a Database name in order to
-                create a blank one
+        Returns
+        -------
+        Boolean
+            returns true if connection was succesful
 
-        :Errors:
-            ConnectionError: if database fails to connect or fails checks
+        Raises
+        ------
+        ConnectionError
+            if database fails to connect or fails checks
         """
-        if not ((os.path.splitext(db)[1] in [".db"]) or (db == ":memory:")):
+        if ((db == ":memory:") or PathUtils.isFileExt(db, ".db")):
+            self.db_driver = QSqlDatabase.addDatabase("QSQLITE")
+            self.db_driver.setDatabaseName(db)
+        else:
             return False
 
-        if not ((os.path.isfile(db)) or (db == ":memory:")):
-            with open(db, "w"):
-                pass
-
-        self.db_driver = QSqlDatabase.addDatabase("QSQLITE")
-        self.db_driver.setUserName(name)
-        self.db_driver.setDatabaseName(db)
-        if self.IsConneted():
+        self.DB_NAME = db
+        if self.db_driver.open() and self.IsConneted():
+            if self.db_driver.isOpenError():
+                raise ConnectionError()
             if not self.StartUpChecks():
-                raise Exception("DB structure Invalid")
+                raise DBStructureError("Startup Checks Failed")
             else:
                 return True
-        else:
+
+        # only executes when connection fails and app closes
+        else: # pragma: no cover
             raise ConnectionError()
 
     def IsConneted(self): #Tested
-        if self.db_driver.open() and self.db_driver.isValid():
-            return True
-        else:
-            return False
-
-    def fetchAll(self, Query, rows = None):
         """
-        Fetches data from the given query
+        Returns a value if DB is connected or not
 
-        >>> library_manager.fetchAll(Query, 5)
+        Returns
+        -------
+        Boolean
+            boolean abased according to the state of the connection
         """
-        Data = []
-        if rows == None:
-            rows = Query.record().count()
-        while Query.next():
-            if rows == 1:
-                Data.append(Query.value(0))
-            else:
-                Data.append([Query.value(R) for R in range(rows)])
-
-        return Data
+        return (self.db_driver.isOpen() and self.db_driver.isValid())
 
     def close_connection(self): #Tested
         """
@@ -99,6 +106,10 @@ class DataBaseManager:
 
         >>> library_manager.close_connection()
 
+        Returns
+        -------
+        boolean
+            closes connection and give true on success
         """
         self.db_driver.commit()
         self.db_driver.close()
@@ -109,102 +120,197 @@ class DataBaseManager:
         """
         Performs validation test for Table avalibility and structure.
         Creates the table or the view if it doesnt exist.
+
+        Returns
+        -------
+        Boolean
+            Returns true if all checks are passed
         """
+
         # checks for existance of library table
-        query = QSqlQuery()
-        query.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = library ")
-        query.exec_()
-        if not query.next():
+        [[TABLE, COLUMNS]] = self.fetchAll(
+            self.ExeQuery("""
+            SELECT
+            (
+                SELECT
+                IIF(name = 'library', TRUE, FALSE)
+                FROM sqlite_master
+                WHERE type = 'table'
+            ) AS TABLE_CHECK,
+            (
+                SELECT
+                min(
+                    IIF( name IN(
+                        'file_id', 'path_id','file_name','file_path','album',
+                        'albumartist','artist','author','bpm','compilation',
+                        'composer','conductor','date','discnumber','discsubtitle',
+                        'encodedby','genre','language','length','filesize',
+                        'lyricist','media','mood','organization','originaldate',
+                        'performer','releasecountry','replaygain_gain','replaygain_peak',
+                        'title','tracknumber','version','website','album_gain',
+                        'bitrate','bitrate_mode','channels','encoder_info','encoder_settings',
+                        'frame_offset','layer','mode','padding','protected','sample_rate',
+                        'track_gain','track_peak', 'rating', 'playcount'), TRUE, FALSE
+                    )
+                )
+                FROM pragma_table_info('library')
+            ) AS COLUMN_CHECK;
+        """)
+        )
+        if not bool(TABLE) or not bool(COLUMNS):
             self.Create_LibraryTable()
-        query = QSqlQuery("SELECT cid FROM pragma_table_info('library')")
-        query.exec_()
-        if len(self.fetchAll(query, 1)) == len(self.db_fields):
-            LIB = True
-        else:
-            LIB = False
 
         # checks for existance of nowplaying view
-        query = QSqlQuery()
-        query.prepare("SELECT name FROM sqlite_master WHERE type = 'view' AND name = nowplaying ")
-        query.exec_()
-        if not query.next():
+        [[TABLE, COLUMNS]] = self.fetchAll(
+            self.ExeQuery("""
+            SELECT
+            (
+                SELECT
+                IIF(name = 'nowplaying', TRUE, FALSE)
+                FROM sqlite_master
+                WHERE type = 'view'
+            ) AS TABLE_CHECK,
+            (
+                SELECT
+                min(
+                    IIF( name IN(
+                        'file_id', 'path_id','file_name','file_path','album',
+                        'albumartist','artist','author','bpm','compilation',
+                        'composer','conductor','date','discnumber','discsubtitle',
+                        'encodedby','genre','language','length','filesize',
+                        'lyricist','media','mood','organization','originaldate',
+                        'performer','releasecountry','replaygain_gain','replaygain_peak',
+                        'title','tracknumber','version','website','album_gain',
+                        'bitrate','bitrate_mode','channels','encoder_info','encoder_settings',
+                        'frame_offset','layer','mode','padding','protected','sample_rate',
+                        'track_gain','track_peak', 'rating', 'playcount'), TRUE, FALSE
+                    )
+                )
+                FROM pragma_table_info('nowplaying')
+            ) AS COLUMN_CHECK
+        """)
+        )
+        if not bool(TABLE) or not bool(COLUMNS):
             self.Create_EmptyView("nowplaying")
 
-        query = QSqlQuery("SELECT cid FROM pragma_table_info('nowplaying')")
-        query.exec_()
-        if len(self.fetchAll(query, 1)) == len(self.db_fields):
-            NPV = True
-        else:
-            NPV = False
+        return True
 
-        return all([NPV, LIB])
-
-    def ExeQuery(self, Query):
+    def ExeQuery(self, Query): #Tested
         """
         Executes an QSqlQuery and returns the query to get results
 
         >>> library_manager.ExeQuery(query)
 
-        :Args:
-            Query: QSqlQuery,String
-                Query to execute
-        :Returns:
-            QSqlQuery
+        Parameters
+        ----------
+        Query: QSqlQuery,String
+            Query to execute
+
+        Returns
+        -------
+        QSqlQuery
+            SQLQuery
         """
         if isinstance(Query, str):
             QueryStr = Query
             Query = QSqlQuery()
-            if Query.prepare(QueryStr) == False :
-                msg = f"""
-                    Query Build Failed
-                    """
-                msg = dedenter(msg, 16)
-                raise Exception(msg)
+            if Query.prepare(QueryStr) == False:
+                raise QueryBuildFailed(QueryStr)
 
-        QueryExe = Query.exec_()
+        QueryExe = Query.exec()
         if QueryExe == False :
             msg = f"""
                 EXE: {QueryExe}
                 ERROR: {(Query.lastError().text())}
                 Query: {Query.lastQuery()}
                 """
-            msg = dedenter(msg, 12)
-            raise Exception(msg)
+            raise QueryExecutionFailed(dedenter(msg, 12))
         else:
             return Query
 
-    def IndexSelector(self, view_name, Column):
+    def fetchAll(self, Query, Column = None): #Tested
+        """
+        Fetches data from the given query
+
+        >>> library_manager.fetchAll(Query, 5)
+
+        Parameters
+        ----------
+        Query : QSqlQuery
+            Query to fetch result set from
+        Column : [Int], optional
+            index of Column to get data for, by default None
+
+        Returns
+        -------
+        List
+            list of matrix of Row X Column, if NULL []
+        """
+        Data = []
+        if Column == None:
+            Column = Query.record().count()
+            while Query.next():
+                Data.append([Query.value(C) for C in range(Column)])
+        else:
+            while Query.next():
+                Data.append([Query.value(Column)])
+
+        return Data
+
+    def IndexSelector(self, view_name, Column): #Tested
         """
         Gets Column Data from a Table and View
 
-        :Args:
-            view_name: String
-                Valid view name from (now_playing)
-            Column: String
-                Valid Column to select data from
+        Parameters
+        ----------
+        view_name : String
+            Valid view name from (now_playing)
+        Column : String
+            Valid Column to select data from
+
+        Returns
+        -------
+        list
+            Column data requested for
+
+        Raises
+        ------
+        Exception
+            if data retruival failed
         """
-        query = QSqlQuery()
-        querystate = query.prepare(f"SELECT {Column} FROM {view_name}")
-        query_exe = query.exec_()
 
-        if query_exe == False and querystate == False:
-            raise Exception(f"<{query.lastQuery()}> Data retrieval Failed \nERROR: {query.lastError().text()}")
-        Indexes = []
-        while query.next():
-            value = query.value(0)
-            Indexes.append(value)
-        return Indexes
+        return self.fetchAll(self.ExeQuery(f"SELECT {Column} FROM {view_name}"),1)
 
-########################################################################################################################
-# Create, Drop, Insert Type Functions
-########################################################################################################################
+    def SelectAll(self, name):
+        """
+        Gets All Data from a Table and View
+
+        Parameters
+        ----------
+        view_name : String
+            Valid view name from (now_playing)
+
+        Returns
+        -------
+        list
+            Table data requested for
+
+        Raises
+        ------
+        Exception
+            if data retruival failed
+        """
+        return self.fetchAll(self.ExeQuery(f"SELECT * FROM {name}"))
+
+    ####################################################################################################################
+    # Create, Drop, Insert Type Functions
+    ####################################################################################################################
 
     def Create_LibraryTable(self): # Tested
         """
         Creates the main Library table with yhe valid column fields
         """
-        query = QSqlQuery()
-        querystate = query.prepare(f"""
+        return self.ExeQuery(f"""
         CREATE TABLE IF NOT EXISTS library(
         file_id TEXT PRIMARY KEY ON CONFLICT IGNORE,
         path_id TEXT,
@@ -256,11 +362,6 @@ class DataBaseManager:
         rating INTEGER,
         playcount INTEGER)
         """)
-        # Error handling and execution of the query
-        if querystate:
-            self.ExeQuery(query)
-        else:
-            raise Exception("Query Build Failed")
 
     def Create_EmptyView(self, view_name): # Tested
         """
@@ -268,44 +369,34 @@ class DataBaseManager:
 
         >>> library_manager.Create_EmptyView("Example")
 
-        :Args:
-            view_name: String
-                Valid view name from (now_playing)
+        Parameters
+        ----------
+        view_name : String
+            Valid view name from (now_playing)
         """
-        query = QSqlQuery()
         columns = ", ".join([f"NULL AS {k}" for k in  self.db_fields])
-        querystate = query.prepare(f"""
-                                   CREATE VIEW IF NOT EXISTS {view_name} AS
-                                   SELECT {columns}
-                                   """)
-        # Error handling and execution of the query
-        if querystate:
-            self.ExeQuery(query)
-        else:
-            raise Exception("Query Build Failed")
+        self.ExeQuery(f"CREATE VIEW IF NOT EXISTS {view_name} AS SELECT {columns}")
 
-    def CreateView(self, view_name, Selector, **kwargs): # Tested
+    def CreateView(self, view_name, Selector, **kwargs):
         """
         Creates an view from library Table by selection data from a valid field
 
         >>> library_manager.CreateView("Viewname", "File_id", [1,2,3,4])
 
-        :Args:
-            view_name: String
-                Valid view name from (now_playing)
-            Selector: List
-                Valid Selector to select and filter out Rows from the table
-            FilterField: String
-                Valid field to select data from
-            ID: List
-                File_id to indexs from if provided
-            Shuffled: Bool
-                Query Type to use for selecting data
-            Normal: Bool
-                Query Type to use for selecting data
-            Filter: Bool
-                Query Type to use for selecting data
+        Parameters
+        ----------
+        view_name: String
+            Valid view name from (now_playing)
+        Selector: List
+            Valid Selector to select and filter out Rows from the table
+        FilterField: String
+            Valid field to select data from
+        ID: List
+            File_id to indexs from if provided
+        Shuffled: Bool
+            Query Type to use for selecting data
         """
+
         # Drops thgiven view to create a new view
         self.DropView(view_name)
 
@@ -319,56 +410,49 @@ class DataBaseManager:
             Field = kwargs.get("FilterField")
 
         # a list of all file ID used for indexing
-        if kwargs.get("Filter") != None:
-            if kwargs.get("ID") != None:
-                ID = ", ".join([f"'{v}'"for v in kwargs.get("ID")])
-            else:
-                ID = ""
-
+        if kwargs.get("ID") != None and kwargs.get("Shuffled") == None:
+            ID = ", ".join([f"'{v}'"for v in kwargs.get("ID")])
             self.ExeQuery(f"""
             CREATE VIEW IF NOT EXISTS {view_name} AS
-            SELECT * FROM library WHERE file_id IN (
-            SELECT file_id
+            SELECT *
             FROM library
-            WHERE {Field} IN ({FilterItems})
-            OR lower({Field}) IN ({FilterItems})
-            OR file_id IN ({ID})
+            WHERE file_id IN (
+                SELECT file_id
+                FROM library
+                WHERE {Field} IN ({FilterItems})
+                OR lower({Field}) IN ({FilterItems})
+                OR file_id IN ({ID})
             )
             """)
-
         # indexing items and shuffling the order
         elif kwargs.get("Shuffled") != None:
             self.ExeQuery(f"""
             CREATE VIEW IF NOT EXISTS {view_name} AS
-            SELECT * FROM library WHERE {Field} IN ({FilterItems})
+            SELECT *
+            FROM library
+            WHERE {Field} IN ({FilterItems})
             ORDER BY RANDOM()
             """)
 
-        # normal filtering using the selected indexes
         else:
             self.ExeQuery(f"""
             CREATE VIEW IF NOT EXISTS {view_name} AS
-            SELECT * FROM library WHERE {Field} IN ({FilterItems})
+            SELECT *
+            FROM library
+            WHERE {Field}
+            IN ({FilterItems})
             """)
 
     def DropTable(self, tablename):
         """
         Drops the table from the database
 
-        :Args:
-            table_name: String
-                Name of the table to be dropped
-        :Error:
-            Exceptions are raised if the query fails
+        Parameters
+        ----------
+        table_name: String
+            Name of the table to be dropped
         """
-        query = QSqlQuery()
-        querystate = query.prepare(f"DROP TABLE IF EXISTS {tablename}")
-        # Error handling and execution of the query
-        if querystate:
-            self.ExeQuery(query)
-        else:
-            raise Exception("Query Build Failed")
-
+        self.ExeQuery(f"DROP TABLE IF EXISTS {tablename}")
 
     def DropView(self, viewname):
         """
@@ -376,28 +460,21 @@ class DataBaseManager:
 
         >>> library_manager.drop_view("viewname")
 
-        :Args:
-            viewname: String
-                Name of the view to be dropped
-        :Error:
-            Exceptions are raised if the query fails
+        Parameters
+        ----------
+        viewname: String
+            Name of the view to be dropped
         """
-        query = QSqlQuery()
-        querystate = query.prepare(f"DROP VIEW IF EXISTS {viewname}")
-        # Error handling and execution of the query
-        if querystate:
-            self.ExeQuery(query)
-        else:
-            raise Exception("Query Build Failed")
-
+        self.ExeQuery(f"DROP VIEW IF EXISTS {viewname}")
 
     def BatchInsert_Metadata(self, metadata):
         """
         Batch Inserts data into library table
 
-        :Args:
-            metadata: Dict
-                Distonary of all the combined metadata
+        Parameters
+        ----------
+        metadata: Dict
+            Distonary of all the combined metadata
         """
         query = QSqlQuery()
         columns =", ".join(metadata.keys())
@@ -405,138 +482,155 @@ class DataBaseManager:
         query.prepare(f"""INSERT OR IGNORE INTO library ({columns}) VALUES ({placeholders})""")
         for keys in metadata.keys():
             query.addBindValue(metadata.get(keys))
+
+        # sets up the transcation
         self.db_driver.transaction()
+        self.ExeQuery("PRAGMA journal_mode = MEMORY")
 
-        QSqlQuery("PRAGMA journal_mode = MEMORY").exec_()
+        if not query.execBatch(): # pragma: no cover
+            msg = f"""
+                ERROR: {(query.lastError().text())}
+                Query: {query.lastQuery()}
+                """
+            raise QueryExecutionFailed(dedenter(msg, 12))
 
-        if not query.execBatch():
-            raise Exception(query.lastError().text())
-
-        QSqlQuery("PRAGMA journal_mode = WAL").exec_()
-
+        self.ExeQuery("PRAGMA journal_mode = WAL")
         self.db_driver.commit()
 
-########################################################################################################################
-# Table Stats Query
-########################################################################################################################
+    ###################################################################################################################
+    # Table Stats Query
+    ###################################################################################################################
 
     def TableSize(self, tablename = "library"):
         """
         Calculates the total size in Gigabytes of all the files monitered.
         Returns the Gigabyte as a Float.
 
-        :Args:
-            tablename: String
-                Name of the table or view to be queried
+        Parameters
+        ----------
+        tablename: String
+            Name of the table or view to be queried
         """
-        query = QSqlQuery(f"SELECT round(sum(filesize)/1024, 2) FROM {tablename}")
-        query.exec_()
-        if query.next():
-            value = (query.value(0))
-            if value != "":
-                return value
-            else:
-                return 0
-        else:
-            return 0
+        query = self.fetchAll(self.ExeQuery(f"""
+        SELECT IIF(OUTPUT, OUTPUT, 0) AS FINAL
+        FROM (
+            SELECT round(sum(filesize)/1024, 2) AS OUTPUT
+            FROM {tablename}
+            )
+        """)
+        )
+        return query.pop().pop()
 
     def TablePlaycount(self, tablename = "library"):
         """
         Calculates the total Playtime and returns an Int
 
-        :Args:
-            tablename: String
-                Name of the table or view to be queried
+        Parameters
+        ----------
+        tablename: String
+            Name of the table or view to be queried
         """
-        query = QSqlQuery(f"SELECT sum(playcount) FROM {tablename}")
-        query.exec_()
-        if query.next():
-            value = (query.value(0))
-            if value != "":
-                return value
-            else:
-                return 0
-        else:
-            return 0
+        query = self.fetchAll(self.ExeQuery(f"""
+        SELECT IIF(OUTPUT, OUTPUT, 0) AS FINAL
+        FROM (
+            SELECT sum(playcount) AS OUTPUT
+            FROM {tablename}
+            )
+        """)
+        )
+        return query.pop().pop()
 
     def TablePlaytime(self, tablename = "library"):
         """
         Calculates the total playtime of all the files monitered.
         Returns the Playtime as a String.
 
-        :Args:
-            tablename: String
-                Name of the table or view to be queried
+        Parameters
+        ----------
+        tablename: String
+            Name of the table or view to be queried
         """
-        query = QSqlQuery(f"""
-                          SELECT sum(substr(length,1,1))*360 + sum(substr(length,3,2))*60 +sum(substr(length,6,2))
-                          FROM {tablename}""")
-        query.exec_()
-        if query.next():
-            value = query.value(0)
-            value = "0" if value == "" else datetime.timedelta(seconds = value)
-
-            return value
-        else:
-            return "0"
+        query = self.fetchAll(self.ExeQuery(f"""
+        SELECT IIF(TIME_SEC, TIME_SEC, 0) AS FINAL
+        FROM (
+            SELECT (sum(substr(length,1,1))*360 + sum(substr(length,3,2))*60 + sum(substr(length,6,2)))
+            AS TIME_SEC
+            FROM {tablename}
+            )
+        """)
+        )
+        return datetime.timedelta(seconds = query.pop().pop())
 
     def TableAlbumcount(self, tablename = "library"):
         """
         Calculates the total count of album of all the files monitered.
         Returns the album count as a Int.
 
-        :Args:
-            tablename: String
-                Name of the table or view to be queried
+        Parameters
+        ----------
+        tablename: String
+            Name of the table or view to be queried
         """
-        query = QSqlQuery(f"SELECT count(DISTINCT album) FROM {tablename}")
-        query.exec_()
-        if query.next():
-            return (query.value(0))
-        else:
-            return 0
+        query = self.fetchAll(self.ExeQuery(f"""
+        SELECT IIF(OUTPUT, OUTPUT, 0) AS FINAL
+        FROM (
+            SELECT count(DISTINCT album) AS OUTPUT
+            FROM {tablename}
+            )
+        """)
+        )
+        return query.pop().pop()
 
     def TableArtistcount(self, tablename = "library"):
         """
         Calculates the total count of albumartist of all the files monitered.
         Returns the albumartist count as a Int.
 
-        :Args:
-            tablename: String
-                Name of the table or view to be queried
+        Parameters
+        ----------
+        tablename: String
+            Name of the table or view to be queried
         """
-        query = QSqlQuery(f"SELECT count(DISTINCT artist) FROM {tablename}")
-        query.exec_()
-        if query.next():
-            return (query.value(0))
-        else:
-            return 0
+        query = self.fetchAll(self.ExeQuery(f"""
+        SELECT IIF(OUTPUT, OUTPUT, 0) AS FINAL
+        FROM (
+            SELECT count(DISTINCT artist) AS OUTPUT
+            FROM {tablename}
+            )
+        """)
+        )
+        return query.pop().pop()
 
     def TableTrackcount(self, tablename = "library"):
         """
         Calculates the total count of Tracks of all the files monitered.
         Returns the track count as a Int.
 
-        :Args:
-            tablename: String
-                Name of the table or view to be queried
+        Parameters
+        ----------
+        tablename: String
+            Name of the table or view to be queried
         """
-        query = QSqlQuery(f"SELECT count(DISTINCT file_id) FROM {tablename}")
-        query.exec_()
-        if query.next():
-            return (query.value(0))
-        else:
-            return 0
+        query = self.fetchAll(self.ExeQuery(f"""
+        SELECT IIF(OUTPUT, OUTPUT, 0) AS FINAL
+        FROM (
+            SELECT count(DISTINCT file_id) AS OUTPUT
+            FROM {tablename}
+            )
+        """)
+        )
+        return query.pop().pop()
 
     def TopAlbum(self, Tablename = "library"):
         """
         Calculates the total playcount of Album of all the files monitered.
 
-        :Args:
-            tablename: String
-                Name of the table or view to be queried
+        Parameters
+        ----------
+        tablename: String
+            Name of the table or view to be queried
         """
-        query = QSqlQuery(f"""
+        query = self.fetchAll(self.ExeQuery(f"""
         SELECT album
         FROM {Tablename}
         WHERE album NOTNULL AND album NOT IN ('', ' ')
@@ -544,9 +638,9 @@ class DataBaseManager:
         ORDER BY COUNT(playcount) DESC
         LIMIT 1;
         """)
-        query.exec_()
-        if query.next():
-            return (query.value(0))
+        )
+        if query != []:
+            return query.pop().pop()
         else:
             return ""
 
@@ -554,11 +648,12 @@ class DataBaseManager:
         """
         Calculates the total playcount of genre of all the files monitered.
 
-        :Args:
-            tablename: String
-                Name of the table or view to be queried
+        Parameters
+        ----------
+        tablename: String
+            Name of the table or view to be queried
         """
-        query = QSqlQuery(f"""
+        query = self.fetchAll(self.ExeQuery(f"""
         SELECT genre
         FROM {Tablename}
         WHERE genre NOTNULL AND genre NOT IN ('', ' ')
@@ -566,9 +661,9 @@ class DataBaseManager:
         ORDER BY COUNT(playcount) DESC
         LIMIT 1;
         """)
-        query.exec_()
-        if query.next():
-            return (query.value(0))
+        )
+        if query != []:
+            return query.pop().pop()
         else:
             return ""
 
@@ -576,11 +671,12 @@ class DataBaseManager:
         """
         Calculates the total playcount of artist of all the files monitered.
 
-        :Args:
-            tablename: String
-                Name of the table or view to be queried
+        Parameters
+        ----------
+        tablename: String
+            Name of the table or view to be queried
         """
-        query = QSqlQuery(f"""
+        query = self.fetchAll(self.ExeQuery(f"""
         SELECT artist
         FROM {Tablename}
         WHERE artist NOTNULL AND artist NOT IN ('', ' ')
@@ -588,9 +684,9 @@ class DataBaseManager:
         ORDER BY COUNT(playcount) DESC
         LIMIT 1;
         """)
-        query.exec_()
-        if query.next():
-            return (query.value(0))
+        )
+        if query != []:
+            return query.pop().pop()
         else:
             return ""
 
@@ -598,23 +694,28 @@ class DataBaseManager:
         """
         Calculates the total playcount of track of all the files monitered.
 
-        :Args:
-            tablename: String
-                Name of the table or view to be queried
+        Parameters
+        ----------
+        tablename: String
+            Name of the table or view to be queried
         """
-        query = QSqlQuery(f"""
+        query = self.fetchAll(self.ExeQuery(f"""
         SELECT title
         FROM {Tablename}
-        WHERE playcount == (SELECT max(playcount) FROM {Tablename}) LIMIT 1;
+        WHERE playcount == (
+            SELECT max(playcount)
+            FROM {Tablename}
+        )
+        LIMIT 1
         """)
-        query.exec_()
-        if query.next():
-            return (query.value(0))
+        )
+        if query != []:
+            return query.pop().pop()
         else:
             return ""
 
 
-class FileManager(DataBaseManager):
+class FileManager(DataBaseManager): # pragma: no cover
     """
     File manager classes manages:
     -> Scanning Directories
@@ -625,7 +726,6 @@ class FileManager(DataBaseManager):
     -> flac
     -> m4a
     """
-
     def __init__(self):
         """Constructor"""
         self.db_fields = DBFIELDS
@@ -684,6 +784,7 @@ class FileManager(DataBaseManager):
             hashval = (hashfun(bytes_)).hexdigest()
         return hashval
 
+
 class LibraryManager(FileManager):
     """
     Controls the database queries for table and view (creation, modification
@@ -698,5 +799,12 @@ class LibraryManager(FileManager):
         super().__init__()
 
         if DBname != None:
-            if not self.connect(DBname):
-                raise Exception("Startup Checks Failed")
+            if not self.connect(DBname):# pragma: coverage
+                raise DBStructureError("Startup Checks Failed")
+
+
+if __name__ == "__main__": # pragma: no cover
+    inst = DataBaseManager()
+    inst.connect(".\\default.db")
+    print(inst.IsConneted(), inst.IsConneted())
+    inst.close_connection()

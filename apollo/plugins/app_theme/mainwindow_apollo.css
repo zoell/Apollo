@@ -114,7 +114,7 @@ Issues:
                 border-right: 1px solid $ui-02;
                 color: $text-02;
                 font-size: 12px;
-                min-height: 24px;
+                min-height: 28px;
                 min-width: 64px;
                 padding-left: 8px;
                 padding-right: 8px;
@@ -146,11 +146,11 @@ Issues:
         }
 
         QTableView::item{
-            background-color: $ui-background;
+            background-color: $ui-01;
             max-height: 24px;
             min-height: 16px;
             padding: 4px;
-            border-bottom: 1px solid $ui-01;
+            border-bottom: 1px solid $ui-02;
             text-align: center;
         }
 
@@ -167,17 +167,19 @@ Issues:
         QTableView::item:pressed{
             background-color: $ui-02;
             color: $text-01;
+            border-bottom: 1px solid $ui-01;            
         }
 
         QTableView::item:selected:active{
             background-color: $ui-02;
             color: $text-01;
-
+            border-bottom: 1px solid $ui-01;                        
         }
 
         QTableView::item:selected:!active{
             background-color: $ui-02;
             color: $text-01;
+            border-bottom: 1px solid $ui-01;                        
         }
 
         QTableView::item:alternate:pressed{
@@ -198,8 +200,8 @@ Issues:
 
         QTableCornerButton::section {
             background-color: $ui-01;
-            border-right: 1px solid $ui-background;
-            border-bottom: 1px solid $ui-background;
+            border-right: 0px solid transparent;
+            border-bottom: 0px solid transparent;
             border-radius: 0px;
         }
 
@@ -216,10 +218,10 @@ Issues:
         }
 
         QListView::item{
-            background-color: $ui-background;
+            background-color: $ui-01;
             max-height: 24px;
             min-height: 24px;
-            border-bottom: 1px solid $ui-01;
+            border-bottom: 1px solid $ui-02;
             text-align: center;
         }
 
@@ -328,7 +330,7 @@ Issues:
             width: 16px;
             padding-left: 2px;
             padding-right: 2px;
-            image: url(":/icon_pack/png/24/branch_open_icon-02.png");
+            image: url(":/icon_pack/png/24/sort-ascending_icon-02.png");
         }
 
         QHeaderView::up-arrow {
@@ -338,7 +340,7 @@ Issues:
             width: 16px;
             padding-left: 2px;
             padding-right: 2px;
-            image: url(":/icon_pack/png/x24/caret--sort--up_icon-02.png");
+            image: url(":/icon_pack/png/24/sort-decending_icon-02.png");
         }
 
     /* QSplitter -------------------------------------------------------------- */
@@ -360,24 +362,25 @@ Issues:
 
         /*Horizontal*/
             QScrollBar:horizontal {
-                height: 10px;
+                max-height: 10px;        
                 border: 0px solid transparent;
                 border-radius: 2px;                
                 margin: 0px;
-                background: transparent;                    
+                background-color: $ui-01;                    
             }
 
             QScrollBar::handle:horizontal {
-                background-color: $ui-04;
-                border: 1px solid $ui-background;
+                background-color: $ui-02;
+                border: 1px solid transparent;
+                min-width: 32px;
                 border-radius: 2px;
-                min-width: 8px;
             }
 
             QScrollBar::handle:horizontal:hover {
-                background-color: $ui-05;
-                border: 1px solid $ui-background;
+                background-color: $ui-02;
+                border: 1px solid transparent;
                 border-radius: 2px;
+                min-width: 32px;                
             }
 
             QScrollBar::handle:horizontal:focus {
@@ -425,25 +428,24 @@ Issues:
 
         /*Vertical*/
             QScrollBar:vertical {
-                background-color: transparent;
-                width: 12px;
+                background-color: $ui-01;                       
+                max-width: 10px;
                 margin: 0px;
                 border: 1px solid transparent;
                 border-radius: 2px;
             }
 
             QScrollBar::handle:vertical {
-                background-color: $ui-04;
-                border: 1px solid $ui-background;
-                min-height: 16px;
+                background-color: $ui-02;
+                border: 1px solid transparent;
+                min-height: 32px;
                 border-radius: 2px;
             }
 
             QScrollBar::handle:vertical:hover {
-                background-color: $ui-05;
-                border: 1px solid transparent;
+                background-color: $ui-02;
+                border: 1px solid transparent;      
                 border-radius: 2px;
-                min-height: 16px;
             }
 
             QScrollBar::handle:vertical:focus {
@@ -451,7 +453,7 @@ Issues:
             }
 
             QScrollBar::add-line:vertical {
-                margin: 3px 0px 3px 0px;
+                margin: 3px 0px 3px 0px; 
                 border-image: transparent;
                 height: 0px;
                 width: 0px;
@@ -586,14 +588,18 @@ Issues:
 
 /* Footer ------------------------------------------------------------------ */
     QWidget#MW_FR_mainfooter{
-        background-color: $ui-01;
+        background-color: $ui-background;
         border: 0px solid Transparent;
         border-top: 1px solid $ui-background;
     }
 
     QWidget#footer_PIXLB_cover{
-        background-color: $ui-background;
-        border: 0px solid Transparent;
+        background-color: Transparent;
+        border: 1px solid $ui-02;
+        border-radius: 2px;
+        background-image: url(':/icon_pack/png/24/music_icon-02.png');
+        background-position: center;
+        background-repeat: no-repeat;
     }
 
     QWidget#footer_LAB_seekbar_right,
@@ -668,7 +674,7 @@ Issues:
             color: $link-01;
             border: 1px solid Transparent;            
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/skip--back_icon-02.png');
+            background-image: url(':/icon_pack/png/24/player-skip-back_icon-02.png');
             background-position: center;
             background-repeat: no-repeat;
         }
@@ -678,7 +684,7 @@ Issues:
             color: $disabled-03;
             border: 1px solid Transparent;            
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/skip--back_disabled-02.png');
+            background-image: url(':/icon_pack/png/24/player-skip-back_disabled-02.png');
             background-position: center;
             background-repeat: no-repeat;
         }
@@ -688,7 +694,7 @@ Issues:
             color: $hover-primary-text;
             border: 1px solid transparent;    
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/skip--back_icon-03.png');
+            background-image: url(':/icon_pack/png/24/player-skip-back_icon-03.png');
             background-position: center;
             background-repeat: no-repeat;        
         }
@@ -699,7 +705,7 @@ Issues:
             color: $hover-primary-text;
             border: 1px solid $active-ui;
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/skip--back_icon-03.png');
+            background-image: url(':/icon_pack/png/24/player-skip-back_icon-03.png');
             background-position: center;
             background-repeat: no-repeat;            
         }
@@ -711,7 +717,7 @@ Issues:
             color: $link-01;
             border: 1px solid Transparent;            
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/rewind--5_icon-02.png');
+            background-image: url(':/icon_pack/png/24/rotate_icon-02.png');
             background-position: center;
             background-repeat: no-repeat;
         }
@@ -721,7 +727,7 @@ Issues:
             color: $disabled-03;
             border: 1px solid Transparent;            
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/rewind--5_disabled-02.png');
+            background-image: url(':/icon_pack/png/24/rotate_disabled-02.png');
             background-position: center;
             background-repeat: no-repeat;
         }
@@ -731,7 +737,7 @@ Issues:
             color: $hover-primary-text;
             border: 1px solid transparent;    
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/rewind--5_icon-03.png');
+            background-image: url(':/icon_pack/png/24/rotate_icon-03.png');
             background-position: center;
             background-repeat: no-repeat;        
         }
@@ -742,7 +748,7 @@ Issues:
             color: $hover-primary-text;
             border: 1px solid $active-ui;
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/rewind--5_icon-03.png');
+            background-image: url(':/icon_pack/png/24/rotate_icon-03.png');
             background-position: center;
             background-repeat: no-repeat;            
         }
@@ -754,7 +760,7 @@ Issues:
             color: $link-01;
             border: 1px solid Transparent;            
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/stop_icon-02.png');
+            background-image: url(':/icon_pack/png/24/player-stop_icon-02.png');
             background-position: center;
             background-repeat: no-repeat;
         }
@@ -764,7 +770,7 @@ Issues:
             color: $disabled-03;
             border: 1px solid Transparent;            
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/stop_disabled-02.png');
+            background-image: url(':/icon_pack/png/24/player-stop_disabled-02.png');
             background-position: center;
             background-repeat: no-repeat;
         }
@@ -774,7 +780,7 @@ Issues:
             color: $hover-primary-text;
             border: 1px solid transparent;    
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/stop_icon-03.png');
+            background-image: url(':/icon_pack/png/24/player-stop_icon-03.png');
             background-position: center;
             background-repeat: no-repeat;        
         }
@@ -785,7 +791,7 @@ Issues:
             color: $hover-primary-text;
             border: 1px solid $active-ui;
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/stop_icon-03.png');
+            background-image: url(':/icon_pack/png/24/player-stop_icon-03.png');
             background-position: center;
             background-repeat: no-repeat;            
         }
@@ -797,7 +803,7 @@ Issues:
             color: $link-01;
             border: 1px solid Transparent;            
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/32/play_icon-02.png');
+            background-image: url(':/icon_pack/png/32/player-play_icon-02.png');
             background-position: center;
             background-repeat: no-repeat;
         }
@@ -807,7 +813,7 @@ Issues:
             color: $disabled-03;
             border: 1px solid Transparent;            
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/32/play_disabled-02.png');
+            background-image: url(':/icon_pack/png/32/player-play_disabled-02.png');
             background-position: center;
             background-repeat: no-repeat;
         }
@@ -817,7 +823,7 @@ Issues:
             color: $hover-primary-text;
             border: 1px solid transparent;    
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/32/play_icon-03.png');
+            background-image: url(':/icon_pack/png/32/player-play_icon-03.png');
             background-position: center;
             background-repeat: no-repeat;        
         }
@@ -828,7 +834,7 @@ Issues:
             color: $hover-primary-text;
             border: 1px solid $active-ui;
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/32/play_icon-03.png');
+            background-image: url(':/icon_pack/png/32/player-play_icon-03.png');
             background-position: center;
             background-repeat: no-repeat;            
         }
@@ -840,7 +846,7 @@ Issues:
             color: $link-01;
             border: 1px solid Transparent;            
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/pause_icon-02.png');
+            background-image: url(':/icon_pack/png/24/player-pause_icon-02.png');
             background-position: center;
             background-repeat: no-repeat;
         }
@@ -850,7 +856,7 @@ Issues:
             color: $disabled-03;
             border: 1px solid Transparent;            
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/pause_disabled-02.png');
+            background-image: url(':/icon_pack/png/24/player-pause_disabled-02.png');
             background-position: center;
             background-repeat: no-repeat;
         }
@@ -860,7 +866,7 @@ Issues:
             color: $hover-primary-text;
             border: 1px solid transparent;    
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/pause_icon-03.png');
+            background-image: url(':/icon_pack/png/24/player-pause_icon-03.png');
             background-position: center;
             background-repeat: no-repeat;        
         }
@@ -871,7 +877,7 @@ Issues:
             color: $hover-primary-text;
             border: 1px solid $active-ui;
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/pause_icon-03.png');
+            background-image: url(':/icon_pack/png/24/player-pause_icon-03.png');
             background-position: center;
             background-repeat: no-repeat;            
         }
@@ -883,7 +889,7 @@ Issues:
             color: $link-01;
             border: 1px solid Transparent;            
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/forward--5_icon-02.png');
+            background-image: url(':/icon_pack/png/24/rotate-2_icon-02.png');
             background-position: center;
             background-repeat: no-repeat;
         }
@@ -893,7 +899,7 @@ Issues:
             color: $disabled-03;
             border: 1px solid Transparent;            
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/forward--5_disabled-02.png');
+            background-image: url(':/icon_pack/png/24/rotate-2_disabled-02.png');
             background-position: center;
             background-repeat: no-repeat;
         }
@@ -903,7 +909,7 @@ Issues:
             color: $hover-primary-text;
             border: 1px solid transparent;    
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/forward--5_icon-03.png');
+            background-image: url(':/icon_pack/png/24/rotate-2_icon-03.png');
             background-position: center;
             background-repeat: no-repeat;        
         }
@@ -914,7 +920,7 @@ Issues:
             color: $hover-primary-text;
             border: 1px solid $active-ui;
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/forward--5_icon-03.png');
+            background-image: url(':/icon_pack/png/24/rotate-2_icon-03.png');
             background-position: center;
             background-repeat: no-repeat;            
         }
@@ -926,7 +932,7 @@ Issues:
             color: $link-01;
             border: 1px solid Transparent;            
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/skip--forward_icon-02.png');
+            background-image: url(':/icon_pack/png/24/player-skip-forward_icon-02.png');
             background-position: center;
             background-repeat: no-repeat;
         }
@@ -936,7 +942,7 @@ Issues:
             color: $disabled-03;
             border: 1px solid Transparent;            
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/skip--forward_disabled-02.png');
+            background-image: url(':/icon_pack/png/24/player-skip-forward_disabled-02.png');
             background-position: center;
             background-repeat: no-repeat;
         }
@@ -946,7 +952,7 @@ Issues:
             color: $hover-primary-text;
             border: 1px solid transparent;    
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/skip--forward_icon-03.png');
+            background-image: url(':/icon_pack/png/24/player-skip-forward_icon-03.png');
             background-position: center;
             background-repeat: no-repeat;        
         }
@@ -957,7 +963,7 @@ Issues:
             color: $hover-primary-text;
             border: 1px solid $active-ui;
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/skip--forward_icon-03.png');
+            background-image: url(':/icon_pack/png/24/player-skip-forward_icon-03.png');
             background-position: center;
             background-repeat: no-repeat;            
         }
@@ -969,7 +975,7 @@ Issues:
             color: $link-01;
             border: 1px solid Transparent;            
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/volume--up_icon-02.png');
+            background-image: url(':/icon_pack/png/24/volume_icon-02.png');
             background-position: center;
             background-repeat: no-repeat;
         }
@@ -979,7 +985,7 @@ Issues:
             color: $disabled-03;
             border: 1px solid Transparent;            
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/volume--up_disabled-02.png');
+            background-image: url(':/icon_pack/png/24/volume_disabled-02.png');
             background-position: center;
             background-repeat: no-repeat;
         }
@@ -989,7 +995,7 @@ Issues:
             color: $hover-primary-text;
             border: 1px solid transparent;    
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/volume--up_icon-03.png');
+            background-image: url(':/icon_pack/png/24/volume_icon-03.png');
             background-position: center;
             background-repeat: no-repeat;        
         }
@@ -1000,7 +1006,7 @@ Issues:
             color: $hover-primary-text;
             border: 1px solid $active-ui;
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/volume--up_icon-03.png');
+            background-image: url(':/icon_pack/png/24/volume_icon-03.png');
             background-position: center;
             background-repeat: no-repeat;            
         }
@@ -1012,7 +1018,7 @@ Issues:
             color: $link-01;
             border: 1px solid Transparent;            
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/audio-console_icon-02.png');
+            background-image: url(':/icon_pack/png/24/adjustments_icon-02.png');
             background-position: center;
             background-repeat: no-repeat;
         }
@@ -1022,7 +1028,7 @@ Issues:
             color: $disabled-03;
             border: 1px solid Transparent;            
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/audio-console_disabled-02.png');
+            background-image: url(':/icon_pack/png/24/adjustments_disabled-02.png');
             background-position: center;
             background-repeat: no-repeat;
         }
@@ -1032,7 +1038,7 @@ Issues:
             color: $hover-primary-text;
             border: 1px solid transparent;    
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/audio-console_icon-03.png');
+            background-image: url(':/icon_pack/png/24/adjustments_icon-03.png');
             background-position: center;
             background-repeat: no-repeat;        
         }
@@ -1043,7 +1049,7 @@ Issues:
             color: $hover-primary-text;
             border: 1px solid $active-ui;
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/audio-console_icon-03.png');
+            background-image: url(':/icon_pack/png/24/adjustments_icon-03.png');
             background-position: center;
             background-repeat: no-repeat;            
         }
@@ -1098,7 +1104,7 @@ Issues:
             color: $link-01;
             border: 1px solid Transparent;            
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/rewind--5_icon-02.png');
+            background-image: url(':/icon_pack/png/24/power_icon-02.png');
             background-position: center;
             background-repeat: no-repeat;
         }
@@ -1108,7 +1114,7 @@ Issues:
             color: $disabled-03;
             border: 1px solid Transparent;            
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/rewind--5_disabled-02.png');
+            background-image: url(':/icon_pack/png/24/power_disabled-02.png');
             background-position: center;
             background-repeat: no-repeat;
         }
@@ -1118,7 +1124,7 @@ Issues:
             color: $hover-primary-text;
             border: 1px solid transparent;    
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/rewind--5_icon-03.png');
+            background-image: url(':/icon_pack/png/24/power_icon-03.png');
             background-position: center;
             background-repeat: no-repeat;        
         }
@@ -1129,35 +1135,33 @@ Issues:
             color: $hover-primary-text;
             border: 1px solid $active-ui;
             border-radius: 2px;
-            background-image: url(':/icon_pack/png/24/rewind--5_icon-03.png');
+            background-image: url(':/icon_pack/png/24/power_icon-03.png');
             background-position: center;
             background-repeat: no-repeat;            
         }
 
 
-
-
 /* NowPlaying Queue -------------------------------------------------------- */
 
     QWidget#NPQ_LEDT_search{
-        background-color: $ui-background;
+        background-color: $ui-01;
         border: 1px solid $ui-02;
-        border-radius: 4px;
+        border-radius: 2px;
         color: $text-01;
-        min-height: 24px;  
+        margin: 2px;
+        margin-right: 0px
     }
 
     QWidget#NPQ_LEDT_search:hover{
-        border: 1px solid $interactive-04;
-        min-height: 24px;        
+        border: 1px solid $interactive-04;      
     }
 
     QWidget#NPQ_HDLB_queue{        
-        background-color: $ui-background;
-        border-left: 2px solid $ui-02;
+        background-color: $ui-01;
+        border-bottom: 2px solid $ui-background;          
         font-size: 12px;
-        min-height: 24px;
         min-width: 64px;
+        min-height: 24px;
         color: $text-01;
     }
 
@@ -1166,23 +1170,27 @@ Issues:
         border: 0px solid Transparent;  
         min-width: 64px;
         padding-bottom: 1px;
-        color: $text-01;
+        color: $text-01;        
     }        
 
     QWidget#NPQ_FR_search{       
-        background-color: $ui-02;     
+        background-color: $ui-background;     
         border: 0px solid Transparent;  
-        min-width: 64px;
-        color: $text-01;
+        min-width: 64px;        
+        min-height: 28px;        
+        color: $text-01;        
     }
 
     /* NPQ_PSB_search */
 
         QPushButton#NPQ_PSB_search{
-            background-color: $ui-01;
+            background-color: Transparent;
             color: $link-01;
             border: 1px solid Transparent;
             
+            margin: 2px;
+            margin-left: 0px;
+
             border-radius: 2px;
             background-image: url(':/icon_pack/png/16/search_icon-03.png');
             background-position: center;
@@ -1231,7 +1239,7 @@ Issues:
         border: 0px solid Transparent;  
         min-width: 64px;
         padding-bottom: 1px;    
-        color: $text-01;
+        color: $text-01;        
     }
 
     QWidget#LBT_FR_grouping,
@@ -1239,115 +1247,115 @@ Issues:
         background-color: $ui-01;     
         border: 0px solid Transparent;  
         min-width: 64px;
-        color: $text-01;
+        color: $text-01;        
     }
 
-
-    QWidget#LBT_LEDT_groupsearch,
-    QWidget#LBT_LEDT_mainsearch {
+    QWidget#LBT_LEDT_search_group{
         background-color: $ui-background;
         border: 1px solid $ui-02;
-        border-radius: 4px;
+        border-radius: 2px;
         color: $text-01;
-        min-height: 24px;  
     }
 
-    QWidget#LBT_LEDT_groupsearch:hover,
-    QWidget#LBT_LEDT_mainsearch:hover {
-        border: 1px solid $interactive-04;
+    QWidget#LBT_LEDT_search_group:hover{
+        border: 1px solid $interactive-04;      
+    }
+
+    QWidget#LBT_FR_search_group{       
+        background-color: $ui-01;     
+        border: 0px solid Transparent;  
+        min-width: 64px;        
         min-height: 24px;        
+        color: $text-01;
     }
 
-    /* LBT_PSB_groupsearch */
+/* QToolButton ------------------------------------------------------------ */
+    
+    QToolButton#LBT_TLB_search_group{
+        background-color: Transparent;
+        color: $link-01;
+        border: 1px solid $ui-02;    
+        min-width: 32px;    
+        border-radius: 2px;
+        background-image: url(':/icon_pack/png/16/search_icon-03.png');
+        background-position: left;
+        background-repeat: no-repeat;
+    }
 
-        QPushButton#LBT_PSB_groupsearch{
-            background-color: $ui-01;
-            color: $link-01;
-            border: 1px solid Transparent;
-            
-            border-radius: 2px;
-            background-image: url(':/icon_pack/png/16/search_icon-02.png');
-            background-position: center;
-            background-repeat: no-repeat;
+    QToolButton:disabled#LBT_TLB_search_group{
+        background-color: $disabled-02;
+        color: $disabled-03;
+        border: 1px solid Transparent;        
+        background-image: url(':/icon_pack/png/16/search_disabled-02.png');
+    }
+
+    QToolButton:hover#LBT_TLB_search_group{
+        background-color: $active-ui;
+        color: $hover-primary-text;
+        border: 1px solid Transparent;
+        background-image: url(':/icon_pack/png/16/search_icon-02.png');
+    }
+
+    QToolButton:checked#LBT_TLB_search_group,
+    QToolButton:pressed#LBT_TLB_search_group{
+        background-color: $active-ui;
+        color: $hover-primary-text;
+        border: 1px solid $ui-01;        
+        background-image: url(':/icon_pack/png/16/search_icon-02.png');
+    }
+
+    QToolButton[popupMode="0"]#LBT_TLB_search_group{
+        padding-right: 2px;
+        border-top: 1px solid $ui-01;        
+    }
+
+    QToolButton[popupMode="1"]#LBT_TLB_search_group{
+        padding-right: 20px;
+    }
+
+    QToolButton[popupMode="1"]::menu-button#LBT_TLB_search_group{
+        border-left: 1px solid $ui-03;
+    }
+
+    QToolButton[popupMode="1"]::menu-button:hover#LBT_TLB_search_group{
+        border-bottom: 1px solid $interactive-01;
+        border-left: 1px solid $hover-ui;
+        border-radius: 0;
+    }
+
+    QToolButton[popupMode="2"]#LBT_TLB_search_group{
+        padding-right: 2px;
+    }
+
+    /*Menu Button -----------------------------------------------------------*/
+        QToolButton::menu-button#LBT_TLB_search_group{
+            border-radius: 0px;
+            padding-bottom: 1px;        
+            outline: none;
+            border-left: 1px solid $ui-02;
+            min-width: 14px;
         }
 
-        QPushButton:disabled#LBT_PSB_groupsearch{
-            background-color: $disabled-02;
-            color: $disabled-03;
-            border: 1px solid Transparent;
-
-            border-radius: 2px;
-            background-image: url(':/icon_pack/png/16/search_disabled-02.png');
-            background-position: center;
-            background-repeat: no-repeat;
+        QToolButton::menu-button:hover#LBT_TLB_search_group{
+            border-bottom: 1px solid $ui-01;
         }
 
-        QPushButton:hover#LBT_PSB_groupsearch{
-            background-color: $active-ui;
-            color: $hover-primary-text;
-            border: 1px solid Transparent;
-            
-            border-radius: 2px;
-            background-image: url(':/icon_pack/png/16/search_icon-01.png');
-            background-position: center;
-            background-repeat: no-repeat;
+        QToolButton::menu-button:checked:hover#LBT_TLB_search_group{
+            border-bottom: 1px solid $ui-01;
         }
 
-        QPushButton:checked#LBT_PSB_groupsearch,
-        QPushButton:pressed#LBT_PSB_groupsearch {
-            background-color: $active-ui;
-            color: $hover-primary-text;
-            border: 1px solid $ui-01;
-            
-            border-radius: 2px;
-            background-image: url(':/icon_pack/png/16/search_icon-01.png');
-            background-position: center;
-            background-repeat: no-repeat;
+        QToolButton::menu-indicator#LBT_TLB_search_group{
+            image: url(":/icon_pack/png/24/chevron-down_icon-03.png");
+            height: 16px;
+            width: 16px;
         }
 
-    /* LBT_PSB_mainsearch */
-
-        QPushButton#LBT_PSB_mainsearch{
-            background-color: $ui-01;
-            color: $link-01;
-            border: 1px solid Transparent;
-            
-            border-radius: 2px;
-            background-image: url(':/icon_pack/png/16/search_icon-02.png');
-            background-position: center;
-            background-repeat: no-repeat;
+        QToolButton::menu-arrow#LBT_TLB_search_group{
+            image: url(":/icon_pack/png/24/chevron-down_icon-03.png");
+            height: 16px;
+            width: 16px;
         }
 
-        QPushButton:disabled#LBT_PSB_mainsearch{
-            background-color: $disabled-02;
-            color: $disabled-03;
-            border: 1px solid Transparent;            
-            
-            border-radius: 2px;
-            background-image: url(':/icon_pack/png/16/search_disabled-02.png');
-            background-position: center;
-            background-repeat: no-repeat;
-        }
-
-        QPushButton:hover#LBT_PSB_mainsearch{
-            background-color: $active-ui;
-            color: $hover-primary-text;
-            border: 1px solid Transparent;
-            
-            border-radius: 2px;
-            background-image: url(':/icon_pack/png/16/search_icon-01.png');
-            background-position: center;
-            background-repeat: no-repeat;
-        }
-
-        QPushButton:checked#LBT_PSB_mainsearch,
-        QPushButton:pressed#LBT_PSB_mainsearch {
-            background-color: $active-ui;
-            color: $hover-primary-text;
-            border: 1px solid $ui-01;
-            
-            border-radius: 2px;
-            background-image: url(':/icon_pack/png/16/search_icon-01.png');
-            background-position: center;
-            background-repeat: no-repeat;
+        QToolButton::menu-arrow:hover#LBT_TLB_search_group{
+            image: url(":/icon_pack/png/24/chevron-down_icon-01.png");
         }
