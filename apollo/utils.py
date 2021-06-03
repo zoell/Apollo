@@ -548,7 +548,7 @@ class ConfigManager:
 
         if len(path) >= 1 and not("" in path):
             index = path.pop(0)
-            data = config.get(index)
+            data =config.get(index, False)
 
             if isinstance(data, dict):
                 return self.Getvalue(path, data)
@@ -624,19 +624,19 @@ class AppConfig(dict):
         """
         return self.get(k)
 
-    def __setitem__(self, k, value):
+    def __setitem__(self, key, value):
         """
         Gets the item at index
 
         Parameters
         ----------
-        k : any
+        key : any
             key to look for
         """
-        if k == "current_db_path":
+        if key == "current_db_path":
             self.current_db_path = value
         else:
-            self.Manager.Setvalue([value], k)
+            self.Manager.Setvalue([value], key)
         self.Manager.writeConfig()
 
     def get(self, key):
@@ -650,6 +650,8 @@ class AppConfig(dict):
         """
         if key == "current_db_path":
             return self.current_db_path
+        else:
+            return self.Manager.Getvalue(key)
 
     # current_db_path #########################################################
     @property
