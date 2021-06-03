@@ -49,13 +49,11 @@ class Theme:
             Application to load theme for
         name : str, optional
             Name of the theme, by default ""
-        """
-        print(name)
+        """    
         if name in os.listdir(self.ROOTPATH):
             self.sheet = self.GetStyleSheet(name)
             self.pallete = self.GetPallete(name)
-            self.LoadAppIcons(name)
-            print(1)
+            self.LoadAppIcons(name)        
             if app:
                 app.setStyleSheet(self.sheet)
 
