@@ -18,7 +18,7 @@ class Theme:
     """
     Theme class for application
     """
-    def __init__(self, Name = ""):
+    def __init__(self, Name = "", App = None):
         """
         Class Constructor
         """
@@ -34,15 +34,12 @@ class Theme:
             if not os.path.isdir(PU.PathJoin(self.ROOTPATH, "GRAY_100")):
                 self.CreateThemePack(self.ROOTPATH, "GRAY_100", self.DefaultPallete())
 
-        self.sheet = None
-        self.pallete = None
         if Name == "":
-            self.LoadTheme(self.ThemeConfig["ACTIVETHEME"])
+            self.LoadTheme(self.ThemeConfig["ACTIVETHEME"], App)
         else:
-            self.LoadTheme(self.ThemeConfig[f"APPTHEMES/{Name}"])
+            self.LoadTheme(Name, App)
 
-
-    def LoadTheme(self, app = None, name = ""): # pragma: no cover
+    def LoadTheme(self, name = "", app = None): # pragma: no cover
         """
         Loads the theme for the given Application
 
@@ -53,12 +50,14 @@ class Theme:
         name : str, optional
             Name of the theme, by default ""
         """
+        print(name)
         if name in os.listdir(self.ROOTPATH):
             self.sheet = self.GetStyleSheet(name)
             self.pallete = self.GetPallete(name)
             self.LoadAppIcons(name)
-        if app:
-            app.setStyleSheet(self.sheet)
+            print(1)
+            if app:
+                app.setStyleSheet(self.sheet)
 
     def GetStyleSheet(self, Name = ""):
         """
