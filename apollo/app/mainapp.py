@@ -111,9 +111,8 @@ class ApolloExecute:
         self.app = QtWidgets.QApplication(sys.argv)
         self.app.setStyle(style)
         self.UI = ApolloMain()
+        self.UI.Theme.LoadTheme(app = self.app)
         self.UI.show()
-        self.ThemeRefresh()
-        self.UI.footer_PSB_play.clicked.connect(self.ThemeRefresh)
 
     def Execute(self):
         """
@@ -126,11 +125,7 @@ class ApolloExecute:
         """
         sys.exit(self.app.exec())
 
-    def ThemeRefresh(self):
-        self.app.setStyleSheet(Theme().GenStyleSheet(Theme().DefaultPallete()))
-
 
 if __name__ == "__main__":
-    from apollo.plugins.app_theme.GRAY_100 import *
     app = ApolloExecute()
     app.Execute()

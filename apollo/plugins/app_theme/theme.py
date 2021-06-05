@@ -25,7 +25,7 @@ class Theme:
         self.ROOTPATH = PU.PathJoin(PARENT_DIR, "plugins", "app_theme", "theme_packs")
         self.ThemeConfig = AppConfig()
 
-        if not os.path.isdir(self.ROOTPATH):
+        if not os.path.isdir(self.ROOTPATH): # pragma: no cover
             os.mkdir(self.ROOTPATH)
             if not os.path.isfile(PU.PathJoin(self.ROOTPATH, "__init__.py")):
                 # Creates an Import
@@ -39,6 +39,9 @@ class Theme:
         else:
             self.LoadTheme(Name, App)
 
+    def get(self, key):
+        return self.pallete.get(key)
+
     def LoadTheme(self, name = "", app = None): # pragma: no cover
         """
         Loads the theme for the given Application
@@ -49,11 +52,14 @@ class Theme:
             Application to load theme for
         name : str, optional
             Name of the theme, by default ""
-        """    
+        """
+        if name == "":
+            name = self.ThemeConfig["ACTIVETHEME"]
+
         if name in os.listdir(self.ROOTPATH):
             self.sheet = self.GetStyleSheet(name)
             self.pallete = self.GetPallete(name)
-            self.LoadAppIcons(name)        
+            self.LoadAppIcons(name)
             if app:
                 app.setStyleSheet(self.sheet)
 
@@ -84,7 +90,7 @@ class Theme:
         """
         if os.path.isfile(PU.PathJoin(self.ROOTPATH, Name, "theme.json")):
             with open(PU.PathJoin(self.ROOTPATH, Name, "theme.json")) as FH:
-                Pallete = FH.read()
+                Pallete = json.load(FH)
             return Pallete
         else:
             raise ThemeLoadFailed("Pallete Not avaliable")

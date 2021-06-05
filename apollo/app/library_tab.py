@@ -38,11 +38,11 @@ class LibraryTab:
         self.MainModel.LoadTable("library", self.MainModel.DB_FIELDS)
         self.DataProvider.AddModel(self.MainModel, "library_model")
         self.MainView.setModel(self.MainModel)
+        self.UI.LBT_LSV_grouping.setModel(self.MainModel)
 
 
 if __name__ == "__main__":
     from apollo.app.mainapp import ApolloExecute
-    from apollo.plugins.app_theme.GRAY_100 import *
 
     app = ApolloExecute()
     app.Execute()
