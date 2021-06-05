@@ -70,7 +70,7 @@ def Gen_TableView_fromData(DataTable: dict):
     return TableView
 
 @pytest.fixture
-def Gen_DbTable_Data(rows = 20):
+def Gen_DbTable_Data(rows = 1000):
     # data insertion into library table
     DataTable = {}
     for fields in LibraryManager().db_fields:
@@ -109,8 +109,6 @@ def LibraryManager_connected():
 def TempFilled_DB(Gen_DbTable_Data):
     Manager = DataBaseManager()
     Data = Gen_DbTable_Data
-    # Manager.connect(r":memory:")
-    # Manager.BatchInsert_Metadata(Data)
     if not os.path.isfile(f"{TESTFILES}\\test_db.db"):
         Manager.connect(f"{TESTFILES}\\test_db.db")
         Manager.BatchInsert_Metadata(Data)

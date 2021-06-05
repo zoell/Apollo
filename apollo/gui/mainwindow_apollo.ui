@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Apollo</string>
   </property>
   <widget class="QWidget" name="MW_WDG_centeral_widget">
    <layout class="QGridLayout" name="gridLayout_6">
@@ -234,7 +234,7 @@
                  <bool>true</bool>
                 </property>
                 <property name="selectionRectVisible">
-                 <bool>true</bool>
+                 <bool>false</bool>
                 </property>
                </widget>
               </item>
@@ -296,7 +296,7 @@
                  <enum>QAbstractItemView::ScrollPerItem</enum>
                 </property>
                 <property name="horizontalScrollMode">
-                 <enum>QAbstractItemView::ScrollPerPixel</enum>
+                 <enum>QAbstractItemView::ScrollPerItem</enum>
                 </property>
                 <property name="showGrid">
                  <bool>false</bool>
@@ -380,13 +380,13 @@
             <set>QAbstractItemView::NoEditTriggers</set>
            </property>
            <property name="selectionMode">
-            <enum>QAbstractItemView::SingleSelection</enum>
+            <enum>QAbstractItemView::ExtendedSelection</enum>
            </property>
            <property name="uniformItemSizes">
             <bool>true</bool>
            </property>
            <property name="selectionRectVisible">
-            <bool>true</bool>
+            <bool>false</bool>
            </property>
           </widget>
          </item>

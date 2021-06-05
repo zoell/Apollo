@@ -9,6 +9,7 @@ Subpackages
 
    apollo.app
    apollo.db
+   apollo.gui
 
 Submodules
 ----------

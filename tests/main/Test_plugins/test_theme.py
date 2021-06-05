@@ -29,7 +29,6 @@ class Test_Theme:
             cls.App.quit()
             del cls.App
 
-    @pytest.mark.skipif(SKIP, reason = "Skip if not needed to be tested")
     def test_GenStyleSheet(self):
         theme = Theme()
         Sheet = """
@@ -44,7 +43,6 @@ class Test_Theme:
         """
         assert ExpectedSheet == theme.GenStyleSheet(theme.DefaultPallete(), Sheet)
 
-    @pytest.mark.skipif(SKIP, reason = "Skip if not needed to be tested")
     def test_GenIconResource(self):
         theme = Theme()
         Expected = r"""        <RCC>
@@ -61,7 +59,6 @@ class Test_Theme:
         </RCC>"""
         assert dedenter(Expected, 8) == (theme.GenIconResource(["1","2","3","4","5","6","7","8"]))
 
-    @pytest.mark.skipif(SKIP, reason = "Skip if not needed to be tested")
     def test_ImageOverlay(self):
         theme = Theme()
         SVG = PU.PathJoin(os.path.split(theme.ROOTPATH)[0], "svg", "app.svg")
@@ -75,7 +72,6 @@ class Test_Theme:
 
         PU.PurgeDirectory(PU.PathJoin(f"{TESTFILES}","png")) # cleanup
 
-    @pytest.mark.skipif(SKIP, reason = "Skip if not needed to be tested")
     def test_GenAppIcons(self):
         theme = Theme()
         theme.GenAppIcons(theme.DefaultPallete(), TESTFILES)
@@ -89,7 +85,6 @@ class Test_Theme:
 
         PU.PurgeDirectory(PU.PathJoin(f"{TESTFILES}","png")) # cleanup
 
-    @pytest.mark.skipif(SKIP, reason = "Skip if not needed to be tested")
     def test_CreateThemePack(self):
         theme = Theme()
         theme.CreateThemePack(TESTFILES, "TEST_theme", theme.DefaultPallete())
@@ -109,7 +104,6 @@ class Test_Theme:
 
         PU.PurgeDirectory(PU.PathJoin(f"{TESTFILES}", "TEST_theme")) # cleanup
 
-    @pytest.mark.skipif(SKIP, reason = "Skip if not needed to be tested")
     def test_GetStyleSheet(self):
         os.mkdir(PU.PathJoin(f"{TESTFILES}", "TEST_theme"))
         with open(PU.PathJoin(f"{TESTFILES}", "TEST_theme", "stylesheet.css"), "w") as FH:
@@ -124,7 +118,6 @@ class Test_Theme:
 
         PU.PurgeDirectory(PU.PathJoin(f"{TESTFILES}", "TEST_theme")) # cleanup
 
-    @pytest.mark.skipif(SKIP, reason = "Skip if not needed to be tested")
     def test_LoadAppIcons(self):
         os.mkdir(PU.PathJoin(f"{TESTFILES}", "TEST_theme"))
         with open(PU.PathJoin(f"{TESTFILES}", "TEST_theme", "app_icons.py"), "w") as FH:

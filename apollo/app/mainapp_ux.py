@@ -32,6 +32,7 @@ class ApolloUX(QtWidgets.QMainWindow, MainWindow):
         self.setupUi(self)
         self.setupUx()
         self.AppConfig = AppConfig()
+        self.Theme = Theme()
 
     def setupUx(self):
         pass
@@ -93,7 +94,6 @@ class ApolloMain(ApolloTabBindings):
 
 if __name__ == "__main__":
     from apollo.app.mainapp import ApolloExecute
-    from apollo.plugins.app_theme.GRAY_100 import *
 
     app = ApolloExecute()
     app.Execute()

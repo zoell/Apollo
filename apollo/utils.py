@@ -1,5 +1,11 @@
-import os, pathvalidate, shutil, json
-import time, json, os, threading
+import os
+import pathvalidate
+import shutil
+import json
+import time
+import json
+import os
+import threading
 
 from apollo import PARENT_DIR
 
@@ -585,16 +591,22 @@ class ConfigManager:
         if len(path) >= 1 and not("" in path):
             index = path.pop(0)
             data = config.get(index, False)
+
             if index not in config.keys():
                 config[index] = value
                 return None
+
             if isinstance(data, dict):
                 return self.Setvalue(value, path, data)
+
+            if isinstance(data, str):
+                config[index] = value
+
+            if isinstance(data, list) and not isinstance(value, str):
+                config[index].append(value)
             else:
-                if isinstance(data, list):
-                    config[index].append(value)
-                else:
-                    config[index] = [value]
+                config[index] = value
+
         else:
             return None
 

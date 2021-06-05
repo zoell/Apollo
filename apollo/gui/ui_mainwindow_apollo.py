@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'mainwindow_apolloUIMBDx.ui'
+## Form generated from reading UI file 'mainwindow_apollozVPPQT.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.1.0
 ##
@@ -112,8 +112,8 @@ class Ui_MainWindow(object):
         self.LBT_LSV_grouping.setFrameShape(QFrame.NoFrame)
         self.LBT_LSV_grouping.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.LBT_LSV_grouping.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.LBT_LSV_grouping.setGridSize(QSize(0, 0))
         self.LBT_LSV_grouping.setUniformItemSizes(True)
+        self.LBT_LSV_grouping.setSelectionRectVisible(False)
 
         self.gridLayout.addWidget(self.LBT_LSV_grouping, 1, 0, 1, 1)
 
@@ -140,7 +140,7 @@ class Ui_MainWindow(object):
         self.LDT_TBV_maintable.setAlternatingRowColors(False)
         self.LDT_TBV_maintable.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.LDT_TBV_maintable.setVerticalScrollMode(QAbstractItemView.ScrollPerItem)
-        self.LDT_TBV_maintable.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
+        self.LDT_TBV_maintable.setHorizontalScrollMode(QAbstractItemView.ScrollPerItem)
         self.LDT_TBV_maintable.setShowGrid(False)
         self.LDT_TBV_maintable.setSortingEnabled(True)
         self.LDT_TBV_maintable.setCornerButtonEnabled(False)
@@ -176,9 +176,9 @@ class Ui_MainWindow(object):
         self.NPQ_LSV_mainqueue.setMinimumSize(QSize(255, 485))
         self.NPQ_LSV_mainqueue.setFrameShape(QFrame.NoFrame)
         self.NPQ_LSV_mainqueue.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.NPQ_LSV_mainqueue.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.NPQ_LSV_mainqueue.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.NPQ_LSV_mainqueue.setUniformItemSizes(True)
-        self.NPQ_LSV_mainqueue.setSelectionRectVisible(True)
+        self.NPQ_LSV_mainqueue.setSelectionRectVisible(False)
 
         self.gridLayout_3.addWidget(self.NPQ_LSV_mainqueue, 5, 0, 1, 1)
 
@@ -442,7 +442,7 @@ class Ui_MainWindow(object):
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"Apollo", None))
         self.LBT_TLB_search_group.setText("")
         self.SubW_TABWG_MainTab.setTabText(self.SubW_TABWG_MainTab.indexOf(self.LBT_WDG_main), QCoreApplication.translate("MainWindow", u"Library", None))
         self.SubW_TABWG_MainTab.setTabText(self.SubW_TABWG_MainTab.indexOf(self.tab_2), QCoreApplication.translate("MainWindow", u"Tab 2", None))

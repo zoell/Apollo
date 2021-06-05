@@ -37,18 +37,17 @@ Apollo uses a number of open source projects to work properly:
 
 ### Installation
 
-Apollo requires [Python3.8] or above to run.
-
+Apollo requires [Python3.8] or above to run.\
 Install the dependencies and devDependencies
 ```sh
-python -m venv --copies <dest dir>
-python -m pip install PyQt5 mutagen pyo
+   python -m venv --copies <dest dir>
+   python -m pip install -r requirements.txt
 ```
-
 Launching Apollo
 ```sh
 python -m apollo
 ```
+
 
 ### Plugins
 

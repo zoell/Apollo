@@ -172,6 +172,7 @@ class NowPlaying_ItemDelegate(QtWidgets.QStyledItemDelegate):
         super().__init__()
         self._model = Model
         self._style = QtWidgets.QApplication.style()
+        self._theme = {}
         self._option = None
         self._painter = None
 
@@ -193,24 +194,59 @@ class NowPlaying_ItemDelegate(QtWidgets.QStyledItemDelegate):
         Row = index.row()
         return [self._model.index(Row, Col).data() for Col in self.Fields]
 
-    def DrawWidget(self, Painter, Option, Index):
-        Painter.setPen(QtGui.QColor("#c6c6c6"))
-        self._style.drawPrimitive(self._style.PE_PanelItemViewItem, Option, Painter, Option.widget)
+    def paint(self, painter, option, index):
+        painter.save()
+        self.DrawWidget(painter, QtWidgets.QStyleOptionViewItem(option), index)
+        painter.restore()
 
+    def sizeHint(self, option, index):
+        return (QSize(option.rect.width(), 64))
+
+    def DrawWidget(self, Painter: QtGui.QPainter, Option, Index):
+        state = Option.state
+
+        if state & self._style.State_Enabled and state & self._style.State_Selected:
+            # Selected
+            color = QtGui.QColor(self._theme.get("ui-02"))
+            border = QtGui.QColor(self._theme.get("ui-01"))
+
+        elif state & self._style.State_Enabled and state & self._style.State_Active:
+            # Normal
+            color = QtGui.QColor(self._theme.get("ui-01"))
+            border = QtGui.QColor(self._theme.get("ui-02"))
+
+        elif state & self._style.State_Enabled:
+            # Inactive
+            color = QtGui.QColor(self._theme.get("ui-01"))
+            border = QtGui.QColor(self._theme.get("ui-02"))
+
+        else:
+            # Disabled
+            color = QtGui.QColor(self._theme.get("disabled-02"))
+            border = QtGui.QColor(self._theme.get("disabled-02"))
+
+        Painter.setPen(color)
+        self._style.drawPrimitive(self._style.PE_PanelItemViewItem, Option, Painter, Option.widget)
+        Painter.fillRect(Option.rect, (color))
+
+        Painter.setPen(QtGui.QColor(self._theme.get("text-02")))
         items = self.getData(Index)
         self.DrawCover(Painter, Option)
         self.DrawTop(Painter, Option, items[0])
         self.DrawMid(Painter, Option, items[1])
         self.DrawBottom(Painter, Option, [items[2], items[3], items[4]])
 
-        Painter.setPen(QtGui.QColor("#393939"))
-        Painter.drawLine(QPoint(0, Option.rect.y() + 64), QPoint(Option.rect.width(), Option.rect.y() + 64))
+        Painter.setPen(border)
+        Painter.drawLine(QPoint(0, Option.rect.y() + 63), QPoint(Option.rect.width(), Option.rect.y() + 63))
 
     def DrawCover(self, Painter, Options):
         self._style.subElementRect(self._style.SE_ItemViewItemDecoration, Options, Options.widget)
         Rect = Options.rect
         TempRec = QRect(Rect.x() + 4, Rect.y() + 4, 56, 56)
-        Painter.drawImage(TempRec, QtGui.QImage(':/icon_pack/png/64/music_icon-02.png'))
+        if False:
+            pass
+        else:
+            Painter.drawImage(TempRec, QtGui.QImage(':/icon_pack/png/64/music_icon-02.png'))
 
     def DrawTop(self, Painter, Options, item):
         Rect = Options.rect
@@ -234,14 +270,6 @@ class NowPlaying_ItemDelegate(QtWidgets.QStyledItemDelegate):
         # 3
         TempRec = QRect(Rect.x() + (64 + Width + 4 + Width + 4), Rect.y() + 44, Width - 4, 16)
         Painter.drawText(TempRec, items[2])
-
-    def paint(self, painter, option, index):
-        painter.save()
-        self.DrawWidget(painter, option, index)
-        painter.restore()
-
-    def sizeHint(self, option, index):
-        return (QSize(option.rect.height(), 64))
 
 
 class NowPlayingTab:
@@ -275,6 +303,7 @@ class NowPlayingTab:
         self.UI.NPQ_LSV_mainqueue.setModel(self.MainModel)
 
         self.Delegate = NowPlaying_ItemDelegate(self.MainModel)
+        self.Delegate._theme = self.UI.Theme
         self.Delegate.setFields("artist", "title", "length", "filesize", "bitrate")
 
         self.UI.NPQ_LSV_mainqueue.setItemDelegate(self.Delegate)
@@ -282,7 +311,6 @@ class NowPlayingTab:
 
 if __name__ == "__main__":
     from apollo.app.mainapp import ApolloExecute
-    from apollo.plugins.app_theme.GRAY_100 import *
 
     app = ApolloExecute()
     app.Execute()
