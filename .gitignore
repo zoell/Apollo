@@ -162,3 +162,4 @@ Thumbs.db
 
 # profiling data
 .prof
+.qt_for_python/uic/uic.exe

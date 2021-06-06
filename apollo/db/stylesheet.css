@@ -4,11 +4,11 @@
 ---------------------------------------------------------------------------
 
 ui-background: Default page background
-interactive-01: Primary interactive color, Primary buttons, 
-interactive-02: Secondary interactive color, Secondary button, 
+interactive-01: Primary interactive color, Primary buttons,
+interactive-02: Secondary interactive color, Secondary button,
 interactive-03: 4.5:1 AA contrast, Tertiary button
-interactive-04: 3:1 AA contrast, Selected elements, Active elements, Accent icons, 
-danger: Danger button background, 3:1 AA contrast 
+interactive-04: 3:1 AA contrast, Selected elements, Active elements, Accent icons,
+danger: Danger button background, 3:1 AA contrast
 ui-01: Container background on ui-background, Secondary page background
 ui-02: Container background on ui-01, `Light` variant background
 ui-02-alt: Container background on ui-01, `Light` variant background
@@ -17,20 +17,20 @@ ui-04: 3:1 aa element contrast, Medium contrast border
 ui-05: 4.5:1 aa element contrast, High contrast border, Emphasis elements
 button-separator: 3:1 aa element contrast, Fluid button separator
 decorative-01: "Light" variant elements
-text-01: Primary text, Body copy, Headers, Hover text color for text-02 
-text-02: Secondary text, Input labels 
+text-01: Primary text, Body copy, Headers, Hover text color for text-02
+text-02: Secondary text, Input labels
 text-03: Placeholder text
 text-04: Text on interactive colors
 text-05: Tertiary text, Help text, text-error, Error message text
-link-01: Primary links, Ghost button, 
+link-01: Primary links, Ghost button,
 inverse-link: Links on inverse-02 backgrounds
 icon-01: Primary icons
 icon-02: Secondary icons
-icon-03: Icons on interactive colors, Icons on non-ui colors, 
-field-01: Default input fields, Fields on ui-backgrounds, 
-field-02: "Light" variant input fields, Fields on ui-01 backgrounds, 
-inverse-01: Inverse text color, Inverse icon color, 
-inverse-02: High contrast backgrounds, High contrast elements, 
+icon-03: Icons on interactive colors, Icons on non-ui colors,
+field-01: Default input fields, Fields on ui-backgrounds,
+field-02: "Light" variant input fields, Fields on ui-01 backgrounds,
+inverse-01: Inverse text color, Inverse icon color,
+inverse-02: High contrast backgrounds, High contrast elements,
 support-01: Error
 support-02: Success
 support-03: Warning
@@ -40,13 +40,13 @@ inverse-support-02: Success in high contrast moments
 inverse-support-03: Warning in high contrast moments
 inverse-support-04: Information in high contrast moments
 overlay-01: Background overlay
-focus: Focus border, Focus underline, 
+focus: Focus border, Focus underline,
 inverse-focus-ui: Focus on high contrast moments
 hover-primary: interactive-01 hover
 hover-primary-text: interactive-01 text hover
 hover-secondary: interactive-02 hover
-hover-tertiary: interactive-03 hover, inverse-01 hover, 
-hover-ui: ui-01 hover, ui-02 hover, Transparent background hover, 
+hover-tertiary: interactive-03 hover, inverse-01 hover,
+hover-ui: ui-01 hover, ui-02 hover, Transparent background hover,
 hover-ui-light: "Light" variant hover
 hover-selected-ui: Selected row hover
 hover-danger: Danger hover, support-01 hover, hover-row, Row hover
@@ -54,7 +54,7 @@ inverse-hover-ui: Hover for inverse-02
 active-primary: interactive-01 active
 active-secondary: interactive-02 active, inverse-01 active
 active-tertiary: interactive-03 active
-active-ui: ui-01 active, ui-02 active 
+active-ui: ui-01 active, ui-02 active
 active-danger: Danger active, support-01 active
 selected-ui: Selected UI elements
 highlight: interactive-01 highlight
@@ -62,12 +62,12 @@ skeleton-01: Skeleton state of graphics
 skeleton-02: Skeleton state of texts
 visited-link: Visited links
 disabled-01: Disabled fields, Disabled backgrounds, Disabled border
-disabled-02: Disabled elements on disabled-01, Disabled label, Disabled text on disabled-01, Disabled icons, Disabled border 
+disabled-02: Disabled elements on disabled-01, Disabled label, Disabled text on disabled-01, Disabled icons, Disabled border
 disabled-03: Disabled text on disabled-02, Disabled icons on disabled-02
 
 Issues:
 # Treeview, ListView, TableView Icons Not checked
-# playstyle and volume controls need bindings and icons through Code 
+# playstyle and volume controls need bindings and icons through Code
 >>> border-image: url(:/icon_pack/png/image.png)0 0 0 0 stretch stretch;
 
 UI item name : <form_name>_<item type>_<others>
@@ -149,11 +149,11 @@ Item Type:
 
 QWidget#centralwidget{
 	background-color: $ui-background;
-    border: transparent; 
+    border: transparent;
 }
 
 QStatusBar {
-    color: $text-01;  
+    color: $text-01;
     background: $ui-01;
 }
 
@@ -161,9 +161,9 @@ QWidget#apollo_SCAR_LBM_main,
 QWidget#scrollAreaWidgetContents,
 QWidget#apollo_SCAR_MDE_main,
 QWidget#scrollAreaWidgetContents_2 {
-    background-color: $ui-02; 
-    border: 0px solid transparent; 
-    color: $text-01;  
+    background-color: $ui-02;
+    border: 0px solid transparent;
+    color: $text-01;
 }
 
 /* QSplitter -------------------------------------------------------------- */
@@ -182,19 +182,19 @@ QWidget#scrollAreaWidgetContents_2 {
     QWidget#label_18, QWidget#label_19, QWidget#label_20, QWidget#label_21,
     QWidget#label_22, QWidget#label_23, QWidget#label_24, QWidget#label_25,
     QWidget#label_28, QWidget#label_38, QWidget#label_29, QWidget#label_37,
-    QWidget#label_30, QWidget#label_39, QWidget#label_31, QWidget#label_36, 
-    QWidget#label_32, QWidget#label_40, QWidget#label_33, QWidget#label_35, 
-    QWidget#label_34, QWidget#label_42, QWidget#label_41, QWidget#label_43, 
-    QWidget#label_27, QWidget#label_26, QWidget#label_66, QWidget#label_67, 
-    QWidget#label_44, QWidget#label_45, QWidget#label_46, QWidget#label_47, 
-    QWidget#label_48, QWidget#label_49, QWidget#label_50, QWidget#label_51, 
-    QWidget#label_52, QWidget#label_54, QWidget#label_53, QWidget#label_55, 
-    QWidget#label_56, QWidget#label_57, QWidget#label_58, QWidget#label_59, 
-    QWidget#label_60, QWidget#label_61, QWidget#label_62, QWidget#label_63, 
+    QWidget#label_30, QWidget#label_39, QWidget#label_31, QWidget#label_36,
+    QWidget#label_32, QWidget#label_40, QWidget#label_33, QWidget#label_35,
+    QWidget#label_34, QWidget#label_42, QWidget#label_41, QWidget#label_43,
+    QWidget#label_27, QWidget#label_26, QWidget#label_66, QWidget#label_67,
+    QWidget#label_44, QWidget#label_45, QWidget#label_46, QWidget#label_47,
+    QWidget#label_48, QWidget#label_49, QWidget#label_50, QWidget#label_51,
+    QWidget#label_52, QWidget#label_54, QWidget#label_53, QWidget#label_55,
+    QWidget#label_56, QWidget#label_57, QWidget#label_58, QWidget#label_59,
+    QWidget#label_60, QWidget#label_61, QWidget#label_62, QWidget#label_63,
     QWidget#label_64, QWidget#label_65 {
-        background-color: transparent; 
-        border: 0px solid transparent; 
-        color: $text-01;  
+        background-color: transparent;
+        border: 0px solid transparent;
+        color: $text-01;
     }
 
 
@@ -208,7 +208,7 @@ QWidget#scrollAreaWidgetContents_2 {
 
     QWidget#apollo_MDE_PIXLB_cover1:hover,
     QWidget#apollo_MDE_PIXLB_cover2:hover{
-        border: 1px solid $interactive-04;    
+        border: 1px solid $interactive-04;
     }
 
 
@@ -228,7 +228,7 @@ QWidget#scrollAreaWidgetContents_2 {
     }
 
     QTabWidget#apollo_TABWG_main QTabBar {
-        background-color: $ui-background;       
+        background-color: $ui-background;
         qproperty-drawBase: 0;
         border-radius: 4px;
         margin: 0px;
@@ -257,7 +257,7 @@ QWidget#scrollAreaWidgetContents_2 {
     QTabWidget#apollo_TABWG_main QTabBar::tab:hover{
         background-color: $ui-04;
         color: $text-01;
-        border-right: 1px solid $ui-background;        
+        border-right: 1px solid $ui-background;
     }
 
 /* QScrollBar -------------------------------------------------------------- */
@@ -478,7 +478,7 @@ QWidget#scrollAreaWidgetContents_2 {
     }
 
     QMenu::right-arrow {
-        image: url(":/icon_pack/png/32/branch_closed_icon-01.png");  
+        image: url(":/icon_pack/png/32/branch_closed_icon-01.png");
         height: 20px;
         width: 20px;
     }
@@ -538,18 +538,18 @@ QWidget#scrollAreaWidgetContents_2 {
     }
 
     QWidget#apollo_SCAR_MDE_main QLineEdit:hover {
-        border: 1px solid $interactive-01;    
+        border: 1px solid $interactive-01;
     }
 
-    QWidget#apollo_LEDT_LBM_topartist, 
-    QWidget#apollo_LEDT_LBM_topalbum, 
-    QWidget#apollo_LEDT_LBM_totsize, 
-    QWidget#apollo_LEDT_LBM_totartist, 
-    QWidget#apollo_LEDT_LBM_totplay, 
-    QWidget#apollo_LEDT_LBM_totplaytime, 
-    QWidget#apollo_LEDT_LBM_tottrack, 
-    QWidget#apollo_LEDT_LBM_topgenre, 
-    QWidget#apollo_LEDT_LBM_toptrack, 
+    QWidget#apollo_LEDT_LBM_topartist,
+    QWidget#apollo_LEDT_LBM_topalbum,
+    QWidget#apollo_LEDT_LBM_totsize,
+    QWidget#apollo_LEDT_LBM_totartist,
+    QWidget#apollo_LEDT_LBM_totplay,
+    QWidget#apollo_LEDT_LBM_totplaytime,
+    QWidget#apollo_LEDT_LBM_tottrack,
+    QWidget#apollo_LEDT_LBM_topgenre,
+    QWidget#apollo_LEDT_LBM_toptrack,
     QWidget#apollo_LEDT_LBM_totalbum,
     QWidget#apollo_TXBRW_lyrics {
         background-color: $ui-background;
@@ -560,27 +560,27 @@ QWidget#scrollAreaWidgetContents_2 {
 
     QWidget#apollo_LEDT_LBM_dbname:hover,
     QWidget#apollo_LEDT_LBM_dbpath:hover {
-        border: 1px solid $interactive-01;    
+        border: 1px solid $interactive-01;
     }
 
-    QWidget#apollo_LEDT_LBM_topartist:hover, 
-    QWidget#apollo_LEDT_LBM_topalbum:hover, 
-    QWidget#apollo_LEDT_LBM_totsize:hover, 
-    QWidget#apollo_LEDT_LBM_totartist:hover, 
-    QWidget#apollo_LEDT_LBM_totplay:hover, 
-    QWidget#apollo_LEDT_LBM_totplaytime:hover, 
-    QWidget#apollo_LEDT_LBM_tottrack:hover, 
-    QWidget#apollo_LEDT_LBM_topgenre:hover, 
-    QWidget#apollo_LEDT_LBM_toptrack:hover, 
+    QWidget#apollo_LEDT_LBM_topartist:hover,
+    QWidget#apollo_LEDT_LBM_topalbum:hover,
+    QWidget#apollo_LEDT_LBM_totsize:hover,
+    QWidget#apollo_LEDT_LBM_totartist:hover,
+    QWidget#apollo_LEDT_LBM_totplay:hover,
+    QWidget#apollo_LEDT_LBM_totplaytime:hover,
+    QWidget#apollo_LEDT_LBM_tottrack:hover,
+    QWidget#apollo_LEDT_LBM_topgenre:hover,
+    QWidget#apollo_LEDT_LBM_toptrack:hover,
     QWidget#apollo_LEDT_LBM_totalbum:hover,
     QWidget#apollo_TXBRW_lyrics:hover {
-        border: 1px solid $interactive-01;    
+        border: 1px solid $interactive-01;
     }
 
 /* ComboBox ---------------------------------------------------------------*/
 
-    QComboBox#apollo_CMBX_LBM_libname, 
-    QComboBox#apollo_CMBX_MDE_cover1, 
+    QComboBox#apollo_CMBX_LBM_libname,
+    QComboBox#apollo_CMBX_MDE_cover1,
     QComboBox#apollo_CMBX_MDE_cover2 {
         border: 0px solid none;
         border-radius: 3px;
@@ -590,8 +590,8 @@ QWidget#scrollAreaWidgetContents_2 {
         background: $ui-02;
     }
 
-    QComboBox#apollo_CMBX_LBM_libname:editable, 
-    QComboBox#apollo_CMBX_MDE_cover1:editable, 
+    QComboBox#apollo_CMBX_LBM_libname:editable,
+    QComboBox#apollo_CMBX_MDE_cover1:editable,
     QComboBox#apollo_CMBX_MDE_cover2:editable {
         background: $hover-ui;
     }
@@ -599,8 +599,8 @@ QWidget#scrollAreaWidgetContents_2 {
     QComboBox#apollo_CMBX_LBM_libname:!editable,
     QComboBox#apollo_CMBX_MDE_cover1:!editable,
     QComboBox#apollo_CMBX_MDE_cover2:!editable,
-    QComboBox#apollo_CMBX_LBM_libname::drop-down:editable, 
-    QComboBox#apollo_CMBX_MDE_cover1::drop-down:editable, 
+    QComboBox#apollo_CMBX_LBM_libname::drop-down:editable,
+    QComboBox#apollo_CMBX_MDE_cover1::drop-down:editable,
     QComboBox#apollo_CMBX_MDE_cover2::drop-down:editable {
         background: $hover-ui;
     }
@@ -608,22 +608,22 @@ QWidget#scrollAreaWidgetContents_2 {
     QComboBox#apollo_CMBX_LBM_libname:!editable:on,
     QComboBox#apollo_CMBX_MDE_cover1:!editable:on,
     QComboBox#apollo_CMBX_MDE_cover2:!editable:on,
-    QComboBox#apollo_CMBX_LBM_libname::drop-down:editable:on, 
-    QComboBox#apollo_CMBX_MDE_cover1::drop-down:editable:on, 
+    QComboBox#apollo_CMBX_LBM_libname::drop-down:editable:on,
+    QComboBox#apollo_CMBX_MDE_cover1::drop-down:editable:on,
     QComboBox#apollo_CMBX_MDE_cover2::drop-down:editable:on {
         background: $hover-ui;
         border: 1px solid $interactive-01;
     }
 
-    QComboBox#apollo_CMBX_LBM_libname:on, 
-    QComboBox#apollo_CMBX_MDE_cover1:on, 
+    QComboBox#apollo_CMBX_LBM_libname:on,
+    QComboBox#apollo_CMBX_MDE_cover1:on,
     QComboBox#apollo_CMBX_MDE_cover2:on {
         padding-top: 3px;
         padding-left: 4px;
     }
 
-    QComboBox#apollo_CMBX_LBM_libname::drop-down, 
-    QComboBox#apollo_CMBX_MDE_cover1::drop-down, 
+    QComboBox#apollo_CMBX_LBM_libname::drop-down,
+    QComboBox#apollo_CMBX_MDE_cover1::drop-down,
     QComboBox#apollo_CMBX_MDE_cover2::drop-down {
         subcontrol-origin: padding;
         subcontrol-position: top right;
@@ -631,20 +631,20 @@ QWidget#scrollAreaWidgetContents_2 {
 
         border-left-width: 1px;
         border-left-color: $ui-background;
-        border-left-style: solid; 
-        border-top-right-radius: 3px; 
+        border-left-style: solid;
+        border-top-right-radius: 3px;
         border-bottom-right-radius: 3px;
     }
 
-    QComboBox#apollo_CMBX_LBM_libname::down-arrow, 
-    QComboBox#apollo_CMBX_MDE_cover1::down-arrow, 
+    QComboBox#apollo_CMBX_LBM_libname::down-arrow,
+    QComboBox#apollo_CMBX_MDE_cover1::down-arrow,
     QComboBox#apollo_CMBX_MDE_cover2::down-arrow {
         image: url(":/icon_pack/png/24/chevron--down_icon-02.png");
         max-width: 4px;
     }
 
-    QComboBox#apollo_CMBX_LBM_libname::down-arrow:on, 
-    QComboBox#apollo_CMBX_MDE_cover1::down-arrow:on, 
+    QComboBox#apollo_CMBX_LBM_libname::down-arrow:on,
+    QComboBox#apollo_CMBX_MDE_cover1::down-arrow:on,
     QComboBox#apollo_CMBX_MDE_cover2::down-arrow:on {
         left: 1px;
     }
@@ -659,7 +659,7 @@ QWidget#scrollAreaWidgetContents_2 {
 /* ListView ---------------------------------------------------------------*/
 
     QListView#apollo_LSV_MDE_filelist{
-        background-color: $ui-01;        
+        background-color: $ui-01;
         color: $text-02;
         gridline-color: none;
     }
@@ -694,7 +694,7 @@ QWidget#scrollAreaWidgetContents_2 {
 
     QListView#apollo_LBM_LSV_filesmon,
     QListView#apollo_LBM_LSV_filters{
-        background-color: $ui-background;        
+        background-color: $ui-background;
         color: $text-02;
         gridline-color: none;
     }
@@ -733,42 +733,42 @@ QWidget#scrollAreaWidgetContents_2 {
         color: $text-01;
     }
 
-    QListView#apollo_LBM_LSV_filters::indicator:checked, 
+    QListView#apollo_LBM_LSV_filters::indicator:checked,
     QListView#apollo_LBM_LSV_filesmon::indicator:checked {
         image: url(":/icon_pack/png/24/checkbox--checked_icon-02.png");
-        background: $ui-01;    
+        background: $ui-01;
     }
 
     QListView#apollo_LBM_LSV_filters::indicator:checked:hover,
     QListView#apollo_LBM_LSV_filesmon::indicator:checked:hover,
     QListView#apollo_LBM_LSV_filters::indicator:checked:focus,
     QListView#apollo_LBM_LSV_filesmon::indicator:checked:focus,
-    QListView#apollo_LBM_LSV_filters::indicator:checked:pressed, 
+    QListView#apollo_LBM_LSV_filters::indicator:checked:pressed,
     QListView#apollo_LBM_LSV_filesmon::indicator:checked:pressed {
         image: url(":/icon_pack/png/24/checkbox--checked_icon-02.png");
-        background: $ui-01;    
+        background: $ui-01;
     }
 
-    QListView#apollo_LBM_LSV_filters::indicator:unchecked, 
+    QListView#apollo_LBM_LSV_filters::indicator:unchecked,
     QListView#apollo_LBM_LSV_filesmon::indicator:unchecked {
         image: url(":/icon_pack/png/24/checkbox--unchecked_icon-02.png");
-        background: $ui-01;    
+        background: $ui-01;
     }
 
     QListView#apollo_LBM_LSV_filters::indicator:unchecked:hover,
     QListView#apollo_LBM_LSV_filesmon::indicator:unchecked:hover,
     QListView#apollo_LBM_LSV_filters::indicator:unchecked:focus,
     QListView#apollo_LBM_LSV_filesmon::indicator:unchecked:focus,
-    QListView#apollo_LBM_LSV_filters::indicator:unchecked:pressed, 
+    QListView#apollo_LBM_LSV_filters::indicator:unchecked:pressed,
     QListView#apollo_LBM_LSV_filesmon::indicator:unchecked:pressed {
         image: url(":/icon_pack/png/24/checkbox--unchecked_icon-02.png");
-        background: $ui-01;    
+        background: $ui-01;
     }
 
-    QListView#apollo_LBM_LSV_filters::indicator:indeterminate, 
+    QListView#apollo_LBM_LSV_filters::indicator:indeterminate,
     QListView#apollo_LBM_LSV_filesmon::indicator:indeterminate {
         image: url(":/icon_pack/png/24/checkbox--indeterminate_icon-02.png");
-        background: $ui-01;    
+        background: $ui-01;
     }
 
     QListView#apollo_LBM_LSV_filters::indicator:indeterminate:hover,
@@ -778,7 +778,7 @@ QWidget#scrollAreaWidgetContents_2 {
     QListView#apollo_LBM_LSV_filters::indicator:indeterminate:pressed,
     QListView#apollo_LBM_LSV_filesmon::indicator:indeterminate:pressed {
         image: url(":/icon_pack/png/24/checkbox--indeterminate_icon-02.png");
-        background: $ui-01;    
+        background: $ui-01;
     }
 
 /* PushButton ---------------------------------------------------------------*/
@@ -805,12 +805,12 @@ QWidget#scrollAreaWidgetContents_2 {
         padding: 0px 8px 0px 8px;
     }
 
-    QPushButton#apollo_PSB_MDE_undo:disabled, 
-    QPushButton#apollo_PSB_MDE_searchweb:disabled, 
-    QPushButton#apollo_PSB_MDE_save:disabled, 
-    QPushButton#apollo_PSB_MDE_rename:disabled, 
-    QPushButton#apollo_PSB_MDE_inspect:disabled, 
-    QPushButton#apollo_PSB_MDE_cancel:disabled, 
+    QPushButton#apollo_PSB_MDE_undo:disabled,
+    QPushButton#apollo_PSB_MDE_searchweb:disabled,
+    QPushButton#apollo_PSB_MDE_save:disabled,
+    QPushButton#apollo_PSB_MDE_rename:disabled,
+    QPushButton#apollo_PSB_MDE_inspect:disabled,
+    QPushButton#apollo_PSB_MDE_cancel:disabled,
     QPushButton#apollo_PSB_LBM_active:disabled,
     QPushButton#apollo_PSB_LBM_export:disabled,
     QPushButton#apollo_PSB_LBM_import:disabled,
@@ -912,7 +912,7 @@ QWidget#scrollAreaWidgetContents_2 {
     }
 
 
-    QPushButton#apollo_PSB_LBM_libnext, 
+    QPushButton#apollo_PSB_LBM_libnext,
     QPushButton#apollo_PSB_MDE_filename_next {
         background-color: $ui-02;
         background-image: url(':/icon_pack/png/24/chevron--right_icon-01.png');
@@ -935,7 +935,7 @@ QWidget#scrollAreaWidgetContents_2 {
         border: 1px solid $ui-02;
         padding: 0px 8px 0px 8px;
     }
-    QPushButton#apollo_PSB_LBM_libnext:hover, 
+    QPushButton#apollo_PSB_LBM_libnext:hover,
     QPushButton#apollo_PSB_MDE_filename_next:hover {
         background-color: $ui-04;
         background-image: url(':/icon_pack/png/24/chevron--right_icon-03.png');
@@ -984,7 +984,7 @@ QWidget#scrollAreaWidgetContents_2 {
         border: 1px solid $ui-02;
         padding: 0px 8px 0px 8px;
     }
-    QPushButton#apollo_PSB_MDE_filename_prev:hover, 
+    QPushButton#apollo_PSB_MDE_filename_prev:hover,
     QPushButton#apollo_PSB_LBM_libprev:hover {
         background-color: $ui-04;
         background-image: url(':/icon_pack/png/24/chevron--left_icon-03.png');
@@ -997,7 +997,7 @@ QWidget#scrollAreaWidgetContents_2 {
     }
     QPushButton#apollo_PSB_MDE_filename_prev:checked,
     QPushButton#apollo_PSB_LBM_libprev:checked,
-    QPushButton#apollo_PSB_MDE_filename_prev:pressed, 
+    QPushButton#apollo_PSB_MDE_filename_prev:pressed,
     QPushButton#apollo_PSB_LBM_libprev:pressed {
         background-color: $active-ui;
         background-image: url(':/icon_pack/png/24/chevron--left_icon-03.png');
@@ -1012,8 +1012,8 @@ QWidget#scrollAreaWidgetContents_2 {
 /* QToolButton ------------------------------------------------------------ */
     QToolButton#apollo_TLB_MDE_autotag {
         background-color: $ui-02;
-        color: $text-02;    
-        border: 1px solid $ui-02;   
+        color: $text-02;
+        border: 1px solid $ui-02;
         border-radius: 2px;
         padding: 0px 8px 0px 8px;
         /* The subcontrols below are used only in the DelayedPopup mode */
@@ -1021,7 +1021,7 @@ QWidget#scrollAreaWidgetContents_2 {
         /* The subcontrol below is used only in the InstantPopup or DelayedPopup mode */
     }
 
-    QToolButton#apollo_TLB_MDE_autotag:disabled, 
+    QToolButton#apollo_TLB_MDE_autotag:disabled,
     QToolButton#apollo_TLB_MDE_autotag:checked:disabled {
         background-color: $disabled-02;
         color: $disabled-03;
@@ -1029,7 +1029,7 @@ QWidget#scrollAreaWidgetContents_2 {
         padding: 0px 8px 0px 8px;
     }
 
-    QToolButton#apollo_TLB_MDE_autotag:hover { 
+    QToolButton#apollo_TLB_MDE_autotag:hover {
         background-color: $hover-ui;
         color: $link-01;
         border: 1px solid $ui-02;
@@ -1045,7 +1045,7 @@ QWidget#scrollAreaWidgetContents_2 {
 
     QToolButton#apollo_TLB_MDE_autotag[popupMode="0"] {
         padding-right: 2px;
-        border-top: 1px solid $ui-01;        
+        border-top: 1px solid $ui-01;
     }
 
     QToolButton#apollo_TLB_MDE_autotag[popupMode="1"] {
@@ -1066,7 +1066,7 @@ QWidget#scrollAreaWidgetContents_2 {
 
     QToolButton#apollo_TLB_MDE_autotag::menu-button {
         border-radius: 0px;
-        padding-bottom: 1px;        
+        padding-bottom: 1px;
         width: 12px;
         outline: none;
     }
