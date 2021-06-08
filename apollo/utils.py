@@ -448,7 +448,7 @@ class ConfigManager:
     >>> inst.Setvariable(["VALUE"], "ROOT/SUB/SUB1")
     """
     def __init__(self):
-        self.file = os.path.join(PARENT_DIR,"config.cfg")
+        self.file = os.path.join(PARENT_DIR,"config_test.cfg")
         self.config_dict = self.openConfig(self.file)
 
     def deafult_settings(self):

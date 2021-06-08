@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'library_manager_uivZynzS.ui'
+## Form generated from reading UI file 'library_manager_uiZQBToF.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.1.0
 ##
@@ -593,34 +593,6 @@ class Ui_MainWindow(object):
         self.gridLayout_8.setSpacing(4)
         self.gridLayout_8.setObjectName(u"gridLayout_8")
         self.gridLayout_8.setContentsMargins(4, 4, 4, 4)
-        self.horizontalLayout_18 = QHBoxLayout()
-        self.horizontalLayout_18.setSpacing(4)
-        self.horizontalLayout_18.setObjectName(u"horizontalLayout_18")
-        self.MDE_PSB_filename_prev = QPushButton(self.LBM_WDG_MDE)
-        self.MDE_PSB_filename_prev.setObjectName(u"MDE_PSB_filename_prev")
-        self.MDE_PSB_filename_prev.setMinimumSize(QSize(24, 24))
-        self.MDE_PSB_filename_prev.setMaximumSize(QSize(24, 24))
-
-        self.horizontalLayout_18.addWidget(self.MDE_PSB_filename_prev)
-
-        self.MDE_LEDT_filename = QLineEdit(self.LBM_WDG_MDE)
-        self.MDE_LEDT_filename.setObjectName(u"MDE_LEDT_filename")
-        self.MDE_LEDT_filename.setMinimumSize(QSize(0, 24))
-        self.MDE_LEDT_filename.setMaximumSize(QSize(16777215, 24))
-        self.MDE_LEDT_filename.setReadOnly(True)
-
-        self.horizontalLayout_18.addWidget(self.MDE_LEDT_filename)
-
-        self.MDE_PSB_filename_next = QPushButton(self.LBM_WDG_MDE)
-        self.MDE_PSB_filename_next.setObjectName(u"MDE_PSB_filename_next")
-        self.MDE_PSB_filename_next.setMinimumSize(QSize(24, 24))
-        self.MDE_PSB_filename_next.setMaximumSize(QSize(24, 24))
-
-        self.horizontalLayout_18.addWidget(self.MDE_PSB_filename_next)
-
-
-        self.gridLayout_8.addLayout(self.horizontalLayout_18, 0, 0, 1, 1)
-
         self.splitter = QSplitter(self.LBM_WDG_MDE)
         self.splitter.setObjectName(u"splitter")
         sizePolicy5 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
@@ -640,7 +612,7 @@ class Ui_MainWindow(object):
         self.MDE_SCAR_main.setWidgetResizable(True)
         self.MDE_WDG_SCARmain = QWidget()
         self.MDE_WDG_SCARmain.setObjectName(u"MDE_WDG_SCARmain")
-        self.MDE_WDG_SCARmain.setGeometry(QRect(0, -1159, 506, 1622))
+        self.MDE_WDG_SCARmain.setGeometry(QRect(0, 0, 506, 1652))
         self.gridLayout_10 = QGridLayout(self.MDE_WDG_SCARmain)
         self.gridLayout_10.setObjectName(u"gridLayout_10")
         self.gridLayout_10.setHorizontalSpacing(0)
@@ -648,7 +620,7 @@ class Ui_MainWindow(object):
         self.gridLayout_10.setContentsMargins(4, 4, 4, 4)
         self.verticalSpacer = QSpacerItem(20, 27, QSizePolicy.Minimum, QSizePolicy.Expanding)
 
-        self.gridLayout_10.addItem(self.verticalSpacer, 2, 0, 1, 1)
+        self.gridLayout_10.addItem(self.verticalSpacer, 3, 0, 1, 1)
 
         self.MDE_GBX_mediainfo = QGroupBox(self.MDE_WDG_SCARmain)
         self.MDE_GBX_mediainfo.setObjectName(u"MDE_GBX_mediainfo")
@@ -1125,69 +1097,7 @@ class Ui_MainWindow(object):
         self.gridLayout_9.addWidget(self.frame_15, 9, 0, 1, 2)
 
 
-        self.gridLayout_10.addWidget(self.MDE_GBX_mediainfo, 0, 0, 1, 1)
-
-        self.MDE_GBX_coverart = QGroupBox(self.MDE_WDG_SCARmain)
-        self.MDE_GBX_coverart.setObjectName(u"MDE_GBX_coverart")
-        self.gridLayout_11 = QGridLayout(self.MDE_GBX_coverart)
-        self.gridLayout_11.setSpacing(4)
-        self.gridLayout_11.setObjectName(u"gridLayout_11")
-        self.gridLayout_11.setContentsMargins(4, 4, 4, 4)
-        self.verticalLayout = QVBoxLayout()
-        self.verticalLayout.setSpacing(4)
-        self.verticalLayout.setObjectName(u"verticalLayout")
-        self.MDE_PIXLB_cover1 = QLabel(self.MDE_GBX_coverart)
-        self.MDE_PIXLB_cover1.setObjectName(u"MDE_PIXLB_cover1")
-        sizePolicy3.setHeightForWidth(self.MDE_PIXLB_cover1.sizePolicy().hasHeightForWidth())
-        self.MDE_PIXLB_cover1.setSizePolicy(sizePolicy3)
-        self.MDE_PIXLB_cover1.setMinimumSize(QSize(240, 240))
-        self.MDE_PIXLB_cover1.setFrameShape(QFrame.StyledPanel)
-
-        self.verticalLayout.addWidget(self.MDE_PIXLB_cover1)
-
-        self.MDE_CMBX_cover1 = QComboBox(self.MDE_GBX_coverart)
-        self.MDE_CMBX_cover1.addItem("")
-        self.MDE_CMBX_cover1.addItem("")
-        self.MDE_CMBX_cover1.addItem("")
-        self.MDE_CMBX_cover1.addItem("")
-        self.MDE_CMBX_cover1.addItem("")
-        self.MDE_CMBX_cover1.addItem("")
-        self.MDE_CMBX_cover1.addItem("")
-        self.MDE_CMBX_cover1.addItem("")
-        self.MDE_CMBX_cover1.addItem("")
-        self.MDE_CMBX_cover1.setObjectName(u"MDE_CMBX_cover1")
-        self.MDE_CMBX_cover1.setMinimumSize(QSize(24, 24))
-        self.MDE_CMBX_cover1.setMaximumSize(QSize(16777215, 24))
-
-        self.verticalLayout.addWidget(self.MDE_CMBX_cover1)
-
-
-        self.gridLayout_11.addLayout(self.verticalLayout, 0, 0, 1, 1)
-
-        self.verticalLayout_2 = QVBoxLayout()
-        self.verticalLayout_2.setSpacing(4)
-        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-        self.MDE_PIXLB_cover2 = QLabel(self.MDE_GBX_coverart)
-        self.MDE_PIXLB_cover2.setObjectName(u"MDE_PIXLB_cover2")
-        sizePolicy3.setHeightForWidth(self.MDE_PIXLB_cover2.sizePolicy().hasHeightForWidth())
-        self.MDE_PIXLB_cover2.setSizePolicy(sizePolicy3)
-        self.MDE_PIXLB_cover2.setMinimumSize(QSize(240, 240))
-        self.MDE_PIXLB_cover2.setFrameShape(QFrame.StyledPanel)
-
-        self.verticalLayout_2.addWidget(self.MDE_PIXLB_cover2)
-
-        self.MDE_CMBX_cover2 = QComboBox(self.MDE_GBX_coverart)
-        self.MDE_CMBX_cover2.setObjectName(u"MDE_CMBX_cover2")
-        self.MDE_CMBX_cover2.setMinimumSize(QSize(24, 24))
-        self.MDE_CMBX_cover2.setMaximumSize(QSize(16777215, 24))
-
-        self.verticalLayout_2.addWidget(self.MDE_CMBX_cover2)
-
-
-        self.gridLayout_11.addLayout(self.verticalLayout_2, 0, 1, 1, 1)
-
-
-        self.gridLayout_10.addWidget(self.MDE_GBX_coverart, 1, 0, 1, 1)
+        self.gridLayout_10.addWidget(self.MDE_GBX_mediainfo, 1, 0, 1, 1)
 
         self.MDE_GBX_mediatags = QGroupBox(self.MDE_WDG_SCARmain)
         self.MDE_GBX_mediatags.setObjectName(u"MDE_GBX_mediatags")
@@ -1771,7 +1681,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.addWidget(self.frame_55)
 
 
-        self.gridLayout_10.addWidget(self.MDE_GBX_mediatags, 3, 0, 1, 1)
+        self.gridLayout_10.addWidget(self.MDE_GBX_mediatags, 4, 0, 1, 1)
 
         self.MDE_GBX_lyrics = QGroupBox(self.MDE_WDG_SCARmain)
         self.MDE_GBX_lyrics.setObjectName(u"MDE_GBX_lyrics")
@@ -1849,17 +1759,98 @@ class Ui_MainWindow(object):
         self.gridLayout_12.addLayout(self.horizontalLayout_61, 2, 0, 1, 1)
 
 
-        self.gridLayout_10.addWidget(self.MDE_GBX_lyrics, 4, 0, 1, 1)
+        self.gridLayout_10.addWidget(self.MDE_GBX_lyrics, 5, 0, 1, 1)
+
+        self.MDE_GBX_coverart = QGroupBox(self.MDE_WDG_SCARmain)
+        self.MDE_GBX_coverart.setObjectName(u"MDE_GBX_coverart")
+        self.gridLayout_11 = QGridLayout(self.MDE_GBX_coverart)
+        self.gridLayout_11.setSpacing(4)
+        self.gridLayout_11.setObjectName(u"gridLayout_11")
+        self.gridLayout_11.setContentsMargins(4, 4, 4, 4)
+        self.verticalLayout = QVBoxLayout()
+        self.verticalLayout.setSpacing(4)
+        self.verticalLayout.setObjectName(u"verticalLayout")
+        self.MDE_PIXLB_cover1 = QLabel(self.MDE_GBX_coverart)
+        self.MDE_PIXLB_cover1.setObjectName(u"MDE_PIXLB_cover1")
+        sizePolicy3.setHeightForWidth(self.MDE_PIXLB_cover1.sizePolicy().hasHeightForWidth())
+        self.MDE_PIXLB_cover1.setSizePolicy(sizePolicy3)
+        self.MDE_PIXLB_cover1.setMinimumSize(QSize(240, 240))
+        self.MDE_PIXLB_cover1.setFrameShape(QFrame.StyledPanel)
+
+        self.verticalLayout.addWidget(self.MDE_PIXLB_cover1)
+
+        self.MDE_CMBX_cover1 = QComboBox(self.MDE_GBX_coverart)
+        self.MDE_CMBX_cover1.setObjectName(u"MDE_CMBX_cover1")
+        self.MDE_CMBX_cover1.setMinimumSize(QSize(24, 24))
+        self.MDE_CMBX_cover1.setMaximumSize(QSize(16777215, 24))
+
+        self.verticalLayout.addWidget(self.MDE_CMBX_cover1)
+
+
+        self.gridLayout_11.addLayout(self.verticalLayout, 0, 0, 1, 1)
+
+        self.verticalLayout_2 = QVBoxLayout()
+        self.verticalLayout_2.setSpacing(4)
+        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
+        self.MDE_PIXLB_cover2 = QLabel(self.MDE_GBX_coverart)
+        self.MDE_PIXLB_cover2.setObjectName(u"MDE_PIXLB_cover2")
+        sizePolicy3.setHeightForWidth(self.MDE_PIXLB_cover2.sizePolicy().hasHeightForWidth())
+        self.MDE_PIXLB_cover2.setSizePolicy(sizePolicy3)
+        self.MDE_PIXLB_cover2.setMinimumSize(QSize(240, 240))
+        self.MDE_PIXLB_cover2.setFrameShape(QFrame.StyledPanel)
+
+        self.verticalLayout_2.addWidget(self.MDE_PIXLB_cover2)
+
+        self.MDE_CMBX_cover2 = QComboBox(self.MDE_GBX_coverart)
+        self.MDE_CMBX_cover2.setObjectName(u"MDE_CMBX_cover2")
+        self.MDE_CMBX_cover2.setMinimumSize(QSize(24, 24))
+        self.MDE_CMBX_cover2.setMaximumSize(QSize(16777215, 24))
+
+        self.verticalLayout_2.addWidget(self.MDE_CMBX_cover2)
+
+
+        self.gridLayout_11.addLayout(self.verticalLayout_2, 0, 1, 1, 1)
+
+
+        self.gridLayout_10.addWidget(self.MDE_GBX_coverart, 2, 0, 1, 1)
+
+        self.horizontalLayout_18 = QHBoxLayout()
+        self.horizontalLayout_18.setSpacing(4)
+        self.horizontalLayout_18.setObjectName(u"horizontalLayout_18")
+        self.MDE_PSB_filename_prev = QPushButton(self.MDE_WDG_SCARmain)
+        self.MDE_PSB_filename_prev.setObjectName(u"MDE_PSB_filename_prev")
+        self.MDE_PSB_filename_prev.setMinimumSize(QSize(24, 24))
+        self.MDE_PSB_filename_prev.setMaximumSize(QSize(24, 24))
+
+        self.horizontalLayout_18.addWidget(self.MDE_PSB_filename_prev)
+
+        self.MDE_LEDT_filename = QLineEdit(self.MDE_WDG_SCARmain)
+        self.MDE_LEDT_filename.setObjectName(u"MDE_LEDT_filename")
+        self.MDE_LEDT_filename.setMinimumSize(QSize(0, 24))
+        self.MDE_LEDT_filename.setMaximumSize(QSize(16777215, 24))
+        self.MDE_LEDT_filename.setReadOnly(True)
+
+        self.horizontalLayout_18.addWidget(self.MDE_LEDT_filename)
+
+        self.MDE_PSB_filename_next = QPushButton(self.MDE_WDG_SCARmain)
+        self.MDE_PSB_filename_next.setObjectName(u"MDE_PSB_filename_next")
+        self.MDE_PSB_filename_next.setMinimumSize(QSize(24, 24))
+        self.MDE_PSB_filename_next.setMaximumSize(QSize(24, 24))
+
+        self.horizontalLayout_18.addWidget(self.MDE_PSB_filename_next)
+
+
+        self.gridLayout_10.addLayout(self.horizontalLayout_18, 0, 0, 1, 1)
 
         self.MDE_SCAR_main.setWidget(self.MDE_WDG_SCARmain)
         self.splitter.addWidget(self.MDE_SCAR_main)
-        self.widget = QWidget(self.splitter)
-        self.widget.setObjectName(u"widget")
-        self.verticalLayout_4 = QVBoxLayout(self.widget)
+        self.layoutWidget = QWidget(self.splitter)
+        self.layoutWidget.setObjectName(u"layoutWidget")
+        self.verticalLayout_4 = QVBoxLayout(self.layoutWidget)
         self.verticalLayout_4.setSpacing(0)
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
         self.verticalLayout_4.setContentsMargins(0, 0, 0, 0)
-        self.label_68 = QLabel(self.widget)
+        self.label_68 = QLabel(self.layoutWidget)
         self.label_68.setObjectName(u"label_68")
         self.label_68.setMinimumSize(QSize(75, 24))
         self.label_68.setMaximumSize(QSize(16777215, 24))
@@ -1867,12 +1858,12 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_4.addWidget(self.label_68)
 
-        self.MDE_LSV_filelist = QListView(self.widget)
+        self.MDE_LSV_filelist = QListView(self.layoutWidget)
         self.MDE_LSV_filelist.setObjectName(u"MDE_LSV_filelist")
 
         self.verticalLayout_4.addWidget(self.MDE_LSV_filelist)
 
-        self.splitter.addWidget(self.widget)
+        self.splitter.addWidget(self.layoutWidget)
 
         self.gridLayout_8.addWidget(self.splitter, 1, 0, 1, 1)
 
@@ -1945,7 +1936,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.LBM_TABWG_main.setCurrentIndex(1)
+        self.LBM_TABWG_main.setCurrentIndex(0)
 
 
         QMetaObject.connectSlotsByName(MainWindow)
@@ -1958,7 +1949,7 @@ class Ui_MainWindow(object):
         self.LBT_GBX_libstat.setTitle(QCoreApplication.translate("MainWindow", u"Library Statistics", None))
         self.label_24.setText(QCoreApplication.translate("MainWindow", u"Total Artists", None))
         self.label_16.setText(QCoreApplication.translate("MainWindow", u"Top Artist", None))
-        self.label_21.setText(QCoreApplication.translate("MainWindow", u"Total Alums", None))
+        self.label_21.setText(QCoreApplication.translate("MainWindow", u"Total Albums", None))
         self.label_18.setText(QCoreApplication.translate("MainWindow", u"Top Track", None))
         self.label_19.setText(QCoreApplication.translate("MainWindow", u"Total Tracks", None))
         self.label_22.setText(QCoreApplication.translate("MainWindow", u"Top Album", None))
@@ -1981,8 +1972,6 @@ class Ui_MainWindow(object):
         self.LBT_PSB_libremove.setText(QCoreApplication.translate("MainWindow", u"Remove", None))
         self.LBT_PSB_librescan.setText(QCoreApplication.translate("MainWindow", u"Rescan", None))
         self.LBM_TABWG_main.setTabText(self.LBM_TABWG_main.indexOf(self.LBM_WDG_LBT), QCoreApplication.translate("MainWindow", u"Library ", None))
-        self.MDE_PSB_filename_prev.setText("")
-        self.MDE_PSB_filename_next.setText("")
         self.MDE_GBX_mediainfo.setTitle(QCoreApplication.translate("MainWindow", u"Media Information", None))
         self.label_28.setText(QCoreApplication.translate("MainWindow", u"Type", None))
         self.label_38.setText(QCoreApplication.translate("MainWindow", u"Tag Version", None))
@@ -2002,19 +1991,6 @@ class Ui_MainWindow(object):
         self.label_43.setText(QCoreApplication.translate("MainWindow", u"Track Gain", None))
         self.label_27.setText(QCoreApplication.translate("MainWindow", u"File Name", None))
         self.label_26.setText(QCoreApplication.translate("MainWindow", u"File Path", None))
-        self.MDE_GBX_coverart.setTitle(QCoreApplication.translate("MainWindow", u"Track Artwork ", None))
-        self.MDE_PIXLB_cover1.setText("")
-        self.MDE_CMBX_cover1.setItemText(0, QCoreApplication.translate("MainWindow", u"New Item", None))
-        self.MDE_CMBX_cover1.setItemText(1, QCoreApplication.translate("MainWindow", u"New Item", None))
-        self.MDE_CMBX_cover1.setItemText(2, QCoreApplication.translate("MainWindow", u"New Item", None))
-        self.MDE_CMBX_cover1.setItemText(3, QCoreApplication.translate("MainWindow", u"New Item", None))
-        self.MDE_CMBX_cover1.setItemText(4, QCoreApplication.translate("MainWindow", u"New Item", None))
-        self.MDE_CMBX_cover1.setItemText(5, QCoreApplication.translate("MainWindow", u"New Item", None))
-        self.MDE_CMBX_cover1.setItemText(6, QCoreApplication.translate("MainWindow", u"New Item", None))
-        self.MDE_CMBX_cover1.setItemText(7, QCoreApplication.translate("MainWindow", u"New Item", None))
-        self.MDE_CMBX_cover1.setItemText(8, QCoreApplication.translate("MainWindow", u"New Item", None))
-
-        self.MDE_PIXLB_cover2.setText("")
         self.MDE_GBX_mediatags.setTitle(QCoreApplication.translate("MainWindow", u"Metadata Tags", None))
         self.label_44.setText(QCoreApplication.translate("MainWindow", u"Title", None))
         self.label_45.setText(QCoreApplication.translate("MainWindow", u"Artist", None))
@@ -2045,6 +2021,11 @@ class Ui_MainWindow(object):
         self.MDE_RDB_unsynclyrics.setText(QCoreApplication.translate("MainWindow", u"Unsynchronized", None))
         self.MDE_CKB_nolyrics.setText(QCoreApplication.translate("MainWindow", u"No Lyrics", None))
         self.MDE_PSB_searchweb.setText(QCoreApplication.translate("MainWindow", u"Search Internet", None))
+        self.MDE_GBX_coverart.setTitle(QCoreApplication.translate("MainWindow", u"Track Artwork ", None))
+        self.MDE_PIXLB_cover1.setText("")
+        self.MDE_PIXLB_cover2.setText("")
+        self.MDE_PSB_filename_prev.setText("")
+        self.MDE_PSB_filename_next.setText("")
         self.label_68.setText(QCoreApplication.translate("MainWindow", u"Tracks List", None))
         self.MDE_PSB_undo.setText(QCoreApplication.translate("MainWindow", u"Undo", None))
         self.MDE_PSB_inspect.setText(QCoreApplication.translate("MainWindow", u"Inspect", None))

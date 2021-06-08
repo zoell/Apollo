@@ -14,7 +14,7 @@ class SQLTableModel(QtGui.QStandardItemModel):
     Errors: None
     """
 
-    def __init__(self):
+    def __init__(self, Driver):
         """
         Info: Constructor
         Args: None
@@ -22,7 +22,7 @@ class SQLTableModel(QtGui.QStandardItemModel):
         Errors: None
         """
         super().__init__()
-        self.DBManager = DataBaseManager()
+        self.DBManager = Driver
         self.DB_FIELDS = self.DBManager.db_fields
         self.DB_TABLE = None
 
@@ -39,7 +39,7 @@ class SQLTableModel(QtGui.QStandardItemModel):
             return [QtGui.QStandardItem(str(V)) for V in ResultSet_dict.get(Row)]
 
         self.removeRows(0, self.rowCount())
-        ResultSet = self.DBManager.fetchAll(self.DBManager.ExeQuery(f"SELECT * FROM {self.DB_TABLE}"))
+        ResultSet = self.DBManager.ExeQuery(f"SELECT * FROM {self.DB_TABLE}")
 
         if len(ResultSet) > 0:
             ResultSet_dict = {Value[0]: Value for Value in ResultSet}
@@ -120,8 +120,7 @@ class SQLTableModel(QtGui.QStandardItemModel):
         Returns: None
         Errors: None
         """
-        Query = self.DBManager.ExeQuery(f"SELECT * FROM {TableName}")
-        ResultSet = self.DBManager.fetchAll(Query)
+        ResultSet = self.DBManager.ExeQuery(f"SELECT * FROM {TableName}")
         for Row in ResultSet:
             self.appendRow(list(map(lambda x: QtGui.QStandardItem(str(x)), Row)))
 
@@ -157,7 +156,7 @@ class SQLTableModel(QtGui.QStandardItemModel):
             Text = (self.Data_atIndex(View, [self.DB_FIELDS.index(Column)])[0])
 
         if Text != "":
-            Query = self.DBManager.ExeQuery(f"""
+            ResultSet = self.DBManager.ExeQuery(f"""
             SELECT file_id FROM {self.DB_TABLE}
             WHERE
             album LIKE '%{Text}%'
@@ -175,7 +174,6 @@ class SQLTableModel(QtGui.QStandardItemModel):
             OR lower(performer) LIKE '%{Text}%'
             OR lower(title) LIKE '%{Text}%'
             """)
-            ResultSet = self.DBManager.fetchAll(Query)
             for Row in range(self.rowCount()):
                 if self.index(Row, 0).data() in ResultSet:
                     View.showRow(Row)

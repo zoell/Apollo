@@ -2026,6 +2026,12 @@
             border-radius: 4px;
         }
 
+        QWidget#LBM_WDG_centeral QWidget#label_68 {
+            background-color: $ui-01;
+            color: $text-02;
+            border-radius: 4px;
+        }
+
         QWidget#LBM_WDG_centeral QWidget#MDE_WDG_SCARmain{
             background-color: transparent;
             border: 0px solid transparent;

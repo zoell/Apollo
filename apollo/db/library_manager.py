@@ -36,6 +36,31 @@ class QueryBuildFailed(Exception): __module__ = "LibraryManager"
 class QueryExecutionFailed(Exception): __module__ = "LibraryManager"
 
 
+class Connection:
+
+    def __init__(self, DBname):
+        super().__init__()
+        self.DB = self.connect(DBname)
+
+    def __enter__(self):
+        DB_Driver = QSqlDatabase.addDatabase("QSQLITE", "DEFAULT")
+        DB_Driver.setDatabaseName(self.DB)
+        if DB_Driver.open():
+            return DB_Driver
+        else:
+            raise ConnectionError()
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        if any([exc_type, exc_value, exc_traceback]):
+            print(exc_type, exc_value, exc_traceback)
+        QSqlDatabase.removeDatabase("DEFAULT")
+
+    def connect(self, DB): #Tested
+        if ((DB == ":memory:") or PathUtils.isFileExt(DB, ".db")):
+            return DB
+        else:
+            raise ConnectionError()
+
 class DataBaseManager:
     """
     Base class for all th sql related function and queries
@@ -47,7 +72,7 @@ class DataBaseManager:
         """
         self.db_fields = DBFIELDS
 
-    def connect(self, db): #Tested
+    def connect(self, DB): #Tested
         """
         Uses the Database Driver to create a connection with a local
         database.If Db not avaliable will create new Db
@@ -69,51 +94,11 @@ class DataBaseManager:
         ConnectionError
             if database fails to connect or fails checks
         """
-        if ((db == ":memory:") or PathUtils.isFileExt(db, ".db")):
-            self.db_driver = QSqlDatabase.addDatabase("QSQLITE")
-            self.db_driver.setDatabaseName(db)
-        else:
-            return False
-
-        self.DB_NAME = db
-        if self.db_driver.open() and self.IsConneted():
-            if self.db_driver.isOpenError():
-                raise ConnectionError()
-            if not self.StartUpChecks():
-                raise DBStructureError("Startup Checks Failed")
-            else:
-                return True
-
+        self.DB_NAME = DB
+        if not self.StartUpChecks():
+            raise DBStructureError("Startup Checks Failed")
         # only executes when connection fails and app closes
         else: # pragma: no cover
-            raise ConnectionError()
-
-    def IsConneted(self): #Tested
-        """
-        Returns a value if DB is connected or not
-
-        Returns
-        -------
-        Boolean
-            boolean abased according to the state of the connection
-        """
-        return (self.db_driver.isOpen() and self.db_driver.isValid())
-
-    def close_connection(self): #Tested
-        """
-        Uses the Database Driver to commit and close a connection with a
-        local database
-
-        >>> library_manager.close_connection()
-
-        Returns
-        -------
-        boolean
-            closes connection and give true on success
-        """
-        self.db_driver.commit()
-        self.db_driver.close()
-        if not self.db_driver.isOpen():
             return True
 
     def StartUpChecks(self): # Tested
@@ -128,8 +113,7 @@ class DataBaseManager:
         """
 
         # checks for existance of library table
-        [[TABLE, COLUMNS]] = self.fetchAll(
-            self.ExeQuery("""
+        [[TABLE, COLUMNS]] = self.ExeQuery("""
             SELECT
             (
                 SELECT
@@ -156,13 +140,11 @@ class DataBaseManager:
                 FROM pragma_table_info('library')
             ) AS COLUMN_CHECK;
         """)
-        )
         if not bool(TABLE) or not bool(COLUMNS):
             self.Create_LibraryTable()
 
         # checks for existance of nowplaying view
-        [[TABLE, COLUMNS]] = self.fetchAll(
-            self.ExeQuery("""
+        [[TABLE, COLUMNS]] = self.ExeQuery("""
             SELECT
             (
                 SELECT
@@ -189,13 +171,12 @@ class DataBaseManager:
                 FROM pragma_table_info('nowplaying')
             ) AS COLUMN_CHECK
         """)
-        )
         if not bool(TABLE) or not bool(COLUMNS):
             self.Create_EmptyView("nowplaying")
 
         return True
 
-    def ExeQuery(self, Query): #Tested
+    def ExeQuery(self, Query, Column = None): #Tested
         """
         Executes an QSqlQuery and returns the query to get results
 
@@ -211,22 +192,30 @@ class DataBaseManager:
         QSqlQuery
             SQLQuery
         """
-        if isinstance(Query, str):
-            QueryStr = Query
-            Query = QSqlQuery()
-            if Query.prepare(QueryStr) == False:
-                raise QueryBuildFailed(QueryStr)
+        with Connection(self.DB_NAME) as CON:
+            print(CON)
+            if isinstance(Query, str):
+                QueryStr = Query
+                Query = QSqlQuery(db=CON)
+                if Query.prepare(QueryStr) == False:
+                    del CON
+                    raise QueryBuildFailed(QueryStr)
+            else:
+                del CON
+                raise Exception()
 
-        QueryExe = Query.exec()
-        if QueryExe == False :
-            msg = f"""
-                EXE: {QueryExe}
-                ERROR: {(Query.lastError().text())}
-                Query: {Query.lastQuery()}
-                """
-            raise QueryExecutionFailed(dedenter(msg, 12))
-        else:
-            return Query
+            QueryExe = Query.exec()
+            if QueryExe == False :
+                msg = f"""
+                    EXE: {QueryExe}
+                    ERROR: {(Query.lastError().text())}
+                    Query: {Query.lastQuery()}
+                    """
+                del CON
+                raise QueryExecutionFailed(dedenter(msg, 12))
+            else:
+                del CON
+                return self.fetchAll(Query, Column)
 
     def fetchAll(self, Query, Column = None): #Tested
         """
@@ -279,7 +268,7 @@ class DataBaseManager:
             if data retruival failed
         """
 
-        return self.fetchAll(self.ExeQuery(f"SELECT {Column} FROM {view_name}"),1)
+        return self.ExeQuery(f"SELECT {Column} FROM {view_name}",1)
 
     def SelectAll(self, name):
         """
@@ -300,7 +289,7 @@ class DataBaseManager:
         Exception
             if data retruival failed
         """
-        return self.fetchAll(self.ExeQuery(f"SELECT * FROM {name}"))
+        return self.ExeQuery(f"SELECT * FROM {name}")
 
     ####################################################################################################################
     # Create, Drop, Insert Type Functions
@@ -476,26 +465,28 @@ class DataBaseManager:
         metadata: Dict
             Distonary of all the combined metadata
         """
-        query = QSqlQuery()
-        columns =", ".join(metadata.keys())
-        placeholders =  ", ".join(["?" for i in range(len(metadata.keys()))])
-        query.prepare(f"""INSERT OR IGNORE INTO library ({columns}) VALUES ({placeholders})""")
-        for keys in metadata.keys():
-            query.addBindValue(metadata.get(keys))
+        with Connection(self.DB_NAME) as CON:
+            # sets up the transcation
+            CON.transaction()
+            QSqlQuery("PRAGMA journal_mode = MEMORY", db = CON)
 
-        # sets up the transcation
-        self.db_driver.transaction()
-        self.ExeQuery("PRAGMA journal_mode = MEMORY")
+            columns =", ".join(metadata.keys())
+            placeholders =  ", ".join(["?" for i in metadata.keys()])
+            query = QSqlQuery(f"INSERT OR IGNORE INTO library ({columns}) VALUES ({placeholders})", db=CON)
+            for keys in metadata.keys():
+                query.addBindValue(metadata.get(keys))
 
-        if not query.execBatch(): # pragma: no cover
-            msg = f"""
-                ERROR: {(query.lastError().text())}
-                Query: {query.lastQuery()}
-                """
-            raise QueryExecutionFailed(dedenter(msg, 12))
+            if not query.execBatch(): # pragma: no cover
+                msg = f"""
+                    ERROR: {(query.lastError().text())}
+                    Query: {query.lastQuery()}
+                    """
+                del CON
+                raise QueryExecutionFailed(dedenter(msg, 12))
 
-        self.ExeQuery("PRAGMA journal_mode = WAL")
-        self.db_driver.commit()
+            QSqlQuery("PRAGMA journal_mode = WAL", db = CON)
+            CON.commit()
+            del CON
 
     ###################################################################################################################
     # Table Stats Query
@@ -511,7 +502,7 @@ class DataBaseManager:
         tablename: String
             Name of the table or view to be queried
         """
-        query = self.fetchAll(self.ExeQuery(f"""
+        query = (self.ExeQuery(f"""
         SELECT IIF(OUTPUT, OUTPUT, 0) AS FINAL
         FROM (
             SELECT round(sum(filesize)/1024, 2) AS OUTPUT
@@ -530,7 +521,7 @@ class DataBaseManager:
         tablename: String
             Name of the table or view to be queried
         """
-        query = self.fetchAll(self.ExeQuery(f"""
+        query = (self.ExeQuery(f"""
         SELECT IIF(OUTPUT, OUTPUT, 0) AS FINAL
         FROM (
             SELECT sum(playcount) AS OUTPUT
@@ -550,7 +541,7 @@ class DataBaseManager:
         tablename: String
             Name of the table or view to be queried
         """
-        query = self.fetchAll(self.ExeQuery(f"""
+        query = (self.ExeQuery(f"""
         SELECT IIF(TIME_SEC, TIME_SEC, 0) AS FINAL
         FROM (
             SELECT (sum(substr(length,1,1))*360 + sum(substr(length,3,2))*60 + sum(substr(length,6,2)))
@@ -571,7 +562,7 @@ class DataBaseManager:
         tablename: String
             Name of the table or view to be queried
         """
-        query = self.fetchAll(self.ExeQuery(f"""
+        query = (self.ExeQuery(f"""
         SELECT IIF(OUTPUT, OUTPUT, 0) AS FINAL
         FROM (
             SELECT count(DISTINCT album) AS OUTPUT
@@ -591,7 +582,7 @@ class DataBaseManager:
         tablename: String
             Name of the table or view to be queried
         """
-        query = self.fetchAll(self.ExeQuery(f"""
+        query = (self.ExeQuery(f"""
         SELECT IIF(OUTPUT, OUTPUT, 0) AS FINAL
         FROM (
             SELECT count(DISTINCT artist) AS OUTPUT
@@ -611,7 +602,7 @@ class DataBaseManager:
         tablename: String
             Name of the table or view to be queried
         """
-        query = self.fetchAll(self.ExeQuery(f"""
+        query = (self.ExeQuery(f"""
         SELECT IIF(OUTPUT, OUTPUT, 0) AS FINAL
         FROM (
             SELECT count(DISTINCT file_id) AS OUTPUT
@@ -630,7 +621,7 @@ class DataBaseManager:
         tablename: String
             Name of the table or view to be queried
         """
-        query = self.fetchAll(self.ExeQuery(f"""
+        query = (self.ExeQuery(f"""
         SELECT album
         FROM {Tablename}
         WHERE album NOTNULL AND album NOT IN ('', ' ')
@@ -653,7 +644,7 @@ class DataBaseManager:
         tablename: String
             Name of the table or view to be queried
         """
-        query = self.fetchAll(self.ExeQuery(f"""
+        query = (self.ExeQuery(f"""
         SELECT genre
         FROM {Tablename}
         WHERE genre NOTNULL AND genre NOT IN ('', ' ')
@@ -676,7 +667,7 @@ class DataBaseManager:
         tablename: String
             Name of the table or view to be queried
         """
-        query = self.fetchAll(self.ExeQuery(f"""
+        query = (self.ExeQuery(f"""
         SELECT artist
         FROM {Tablename}
         WHERE artist NOTNULL AND artist NOT IN ('', ' ')
@@ -699,7 +690,7 @@ class DataBaseManager:
         tablename: String
             Name of the table or view to be queried
         """
-        query = self.fetchAll(self.ExeQuery(f"""
+        query = (self.ExeQuery(f"""
         SELECT title
         FROM {Tablename}
         WHERE playcount == (
@@ -804,7 +795,21 @@ class LibraryManager(FileManager):
 
 
 if __name__ == "__main__": # pragma: no cover
-    inst = DataBaseManager()
-    inst.connect(".\\default.db")
-    print(inst.IsConneted(), inst.IsConneted())
-    inst.close_connection()
+    with Connection(".\\default.db") as CON:
+        del CON
+
+    with Connection(".\\default.db") as CON:
+        del CON
+
+    with Connection(".\\default.db") as CON:
+        del CON
+
+    with Connection(".\\default.db") as CON:
+        del CON
+
+    with Connection(".\\default.db") as CON:
+        del CON
+
+    with Connection(".\\default.db") as CON:
+        del CON
+

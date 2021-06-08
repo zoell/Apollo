@@ -1,4 +1,5 @@
 import os
+from posixpath import ismount
 import sys
 import re
 import importlib
@@ -18,21 +19,22 @@ class Theme:
     """
     Theme class for application
     """
+    ROOTPATH = PU.PathJoin(PARENT_DIR, "plugins", "app_theme", "theme_packs")
+
     def __init__(self, Name = "", App = None):
         """
         Class Constructor
         """
-        self.ROOTPATH = PU.PathJoin(PARENT_DIR, "plugins", "app_theme", "theme_packs")
         self.ThemeConfig = AppConfig()
 
-        if not os.path.isdir(self.ROOTPATH): # pragma: no cover
-            os.mkdir(self.ROOTPATH)
-            if not os.path.isfile(PU.PathJoin(self.ROOTPATH, "__init__.py")):
+        if not os.path.isdir(Theme.ROOTPATH): # pragma: no cover
+            os.mkdir(Theme.ROOTPATH)
+            if not os.path.isfile(PU.PathJoin(Theme.ROOTPATH, "__init__.py")):
                 # Creates an Import
-                with open(PU.PathJoin(self.ROOTPATH, "__init__.py"), "w") as FH:
+                with open(PU.PathJoin(Theme.ROOTPATH, "__init__.py"), "w") as FH:
                     FH.write("from . import *")
-            if not os.path.isdir(PU.PathJoin(self.ROOTPATH, "GRAY_100")):
-                self.CreateThemePack(self.ROOTPATH, "GRAY_100", self.DefaultPallete())
+            if not os.path.isdir(PU.PathJoin(Theme.ROOTPATH, "GRAY_100")):
+                self.CreateThemePack(Theme.ROOTPATH, "GRAY_100", self.DefaultPallete())
 
         if Name == "":
             self.LoadTheme(self.ThemeConfig["ACTIVETHEME"], App)
@@ -41,6 +43,10 @@ class Theme:
 
     def get(self, key):
         return self.pallete.get(key)
+
+    @staticmethod
+    def getThemeNames():
+        return [F for F in os.listdir(PU.PathJoin(PARENT_DIR, "plugins", "app_theme", "theme_packs"))]
 
     def LoadTheme(self, name = "", app = None): # pragma: no cover
         """
@@ -56,7 +62,7 @@ class Theme:
         if name == "":
             name = self.ThemeConfig["ACTIVETHEME"]
 
-        if name in os.listdir(self.ROOTPATH):
+        if name in os.listdir(Theme.ROOTPATH):
             self.sheet = self.GetStyleSheet(name)
             self.pallete = self.GetPallete(name)
             self.LoadAppIcons(name)
@@ -72,8 +78,8 @@ class Theme:
         Returns: String
         Errors: None
         """
-        if os.path.isfile(PU.PathJoin(self.ROOTPATH, Name, "stylesheet.css")):
-            with open(PU.PathJoin(self.ROOTPATH, Name, "stylesheet.css")) as FH:
+        if os.path.isfile(PU.PathJoin(Theme.ROOTPATH, Name, "stylesheet.css")):
+            with open(PU.PathJoin(Theme.ROOTPATH, Name, "stylesheet.css")) as FH:
                 Stylesheet = FH.read()
             return Stylesheet
         else:
@@ -88,8 +94,8 @@ class Theme:
         Returns: String
         Errors: None
         """
-        if os.path.isfile(PU.PathJoin(self.ROOTPATH, Name, "theme.json")):
-            with open(PU.PathJoin(self.ROOTPATH, Name, "theme.json")) as FH:
+        if os.path.isfile(PU.PathJoin(Theme.ROOTPATH, Name, "theme.json")):
+            with open(PU.PathJoin(Theme.ROOTPATH, Name, "theme.json")) as FH:
                 Pallete = json.load(FH)
             return Pallete
         else:
@@ -104,7 +110,7 @@ class Theme:
         Returns: None
         Errors: None
         """
-        if os.path.isfile(PU.PathJoin(self.ROOTPATH, Name, "app_icons.py")):
+        if os.path.isfile(PU.PathJoin(Theme.ROOTPATH, Name, "app_icons.py")):
             if PKG != None:
                 importlib.import_module(f".{Name}", PKG)
             else:
@@ -163,8 +169,8 @@ class Theme:
                     FH.close()
                     PU.PurgeFile(PU.PathJoin(ThemePath, "app_icons.qrc"))
         else: return None
-
         self.ThemeConfig[f"APPTHEMES/{Name}"] = ThemePath
+
 
     def GenStyleSheet(self, pallete, stylesheet = None): # Tested
         """
@@ -178,7 +184,7 @@ class Theme:
         Errors: None
         """
         if stylesheet == None:
-            with open(PU.PathJoin(os.path.split(self.ROOTPATH)[0], "mainwindow_apollo.css")) as style:
+            with open(PU.PathJoin(os.path.split(Theme.ROOTPATH)[0], "mainwindow_apollo.css")) as style:
                 stylesheet = style.read()
         for element, value in pallete.items():
             stylesheet = re.sub(f"[($)]{element}(?!-)", value, stylesheet)
@@ -212,12 +218,12 @@ class Theme:
             os.mkdir(PU.PathJoin(Dest, "64"))
 
         # works for only for SVG files present in root directory
-        SVGS = os.listdir(PU.PathJoin(os.path.split(self.ROOTPATH)[0], "svg"))
+        SVGS = os.listdir(PU.PathJoin(os.path.split(Theme.ROOTPATH)[0], "svg"))
 
         # Scans all the SVG file to generate theme images
         for Image in SVGS:
             # SVG image Abs Path
-            Image = PU.PathJoin(PU.PathJoin(os.path.split(self.ROOTPATH)[0], "svg"), Image)
+            Image = PU.PathJoin(PU.PathJoin(os.path.split(Theme.ROOTPATH)[0], "svg"), Image)
             for ThemeName in ["icon-01", "icon-02", "icon-03", "inverse-01", "disabled-02", "disabled-03"]:
                 Colour = QtGui.QColor(pallete.get(ThemeName))
                 self.ImageOverlay(Image, ThemeName, PU.PathJoin(Dest, "16"), Colour, 16)
@@ -373,3 +379,9 @@ class Theme:
                 "disabled-03" : "#6f6f6f"
             }
         return JSON
+
+if __name__ == "__main__":
+    app = QtWidgets.QApplication([])
+    inst = Theme()
+    inst.CreateThemePack(Dest =inst.ROOTPATH, Name="1111", pallete = inst.DefaultPallete())
+    app.exec()

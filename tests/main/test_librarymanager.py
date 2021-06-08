@@ -1,6 +1,6 @@
 import datetime
 import os
-import pytest
+import pytest, time
 
 from PySide6.QtSql import QSqlQuery
 from PySide6 import QtWidgets
@@ -28,7 +28,6 @@ class Test_DataBaseManager:
 
         # checks for a normal connection startup
         assert Manager.connect(":memory:")
-        assert Manager.IsConneted()
 
         # checks for an post connection DB Structure integrity
         assert Manager.StartUpChecks()
@@ -38,37 +37,34 @@ class Test_DataBaseManager:
         assert Manager.StartUpChecks()
 
         # checks for a normal connection close
-        assert Manager.close_connection()
-        assert (not Manager.IsConneted())
 
     def test_DBFiletype(self):
         Manager = DataBaseManager()
 
-        # checks for non DB file filtering
-        assert not Manager.connect("hello.txt")
+        try:
+            # checks for non DB file filtering
+            Manager.connect("hello.txt")
+        except ConnectionError:
+            assert True
+        else:
+            assert False
 
         # checks for in memory DB file
         assert Manager.connect(":memory:")
-        Manager.close_connection() # cleanup
 
         # checks for DB file filtering
         assert Manager.connect("trial.db")
         assert Manager.StartUpChecks()
 
-        Manager.close_connection() # cleanup
         os.remove('trial.db') # cleanup
         assert not os.path.isfile("trial.db") # cleanup
 
-    def test_BatchInsert_Metadata(self, DBManager, Gen_DbTable_Data):
-        Manager = DBManager
-        DATA = Gen_DbTable_Data
-        Manager.BatchInsert_Metadata(DATA)
-
+    def test_BatchInsert_Metadata(self, TempFilled_DB):
+        Manager, DATA = TempFilled_DB
         Inserted_data = [[Col[R] for Col in DATA.values()] for R in range(len(DATA["file_id"]))]
         Querydata = Manager.SelectAll("library")
-
         assert Inserted_data == Querydata
-        Manager.close_connection() # cleanup
+        del_TempFilled_DB()
 
     def test_SelectAll(self, TempFilled_DB):
         Manager, DATA = TempFilled_DB
@@ -77,24 +73,15 @@ class Test_DataBaseManager:
         Querydata = Manager.SelectAll("library")
 
         assert Inserted_data == Querydata
-        Manager.close_connection() # cleanup
 
-    def test_ExeQuery(self, DBManager):
-        Manager = DBManager
+    def test_ExeQuery(self, TempFilled_DB):
+        Manager, _ = TempFilled_DB
 
         # string query complete execution
-        query = Manager.ExeQuery("""
+        assert Manager.ExeQuery("""
 	        SELECT IIF(name = 'library', TRUE, FALSE)
         FROM sqlite_master WHERE type = 'table'
         """)
-        assert isinstance(query, QSqlQuery)
-
-        # SQLQuery object complete execution
-        query = Manager.ExeQuery(QSqlQuery("""
-	        SELECT IIF(name = 'library', TRUE, FALSE)
-        FROM sqlite_master WHERE type = 'table'
-        """))
-        assert isinstance(query, QSqlQuery)
 
         # string build failing
         try:
@@ -104,40 +91,26 @@ class Test_DataBaseManager:
             """)
         except QueryBuildFailed: assert True
         else: assert False
+        del_TempFilled_DB()
 
-        # SQLQuery object execution failing
-        try:
-            query = Manager.ExeQuery(QSqlQuery("""
-	            SELECT IIF(name = 'library', TRUE, FALSE)
-            FROM sqlite_master type = 'table'
-            """))
-        except QueryExecutionFailed: assert True
-        else: assert False
 
-        Manager.close_connection() # cleanup
-
-    def test_fetchAll(self, DBManager):
-        Manager = DBManager
+    def test_fetchAll(self, TempFilled_DB):
+        Manager, _ = TempFilled_DB
 
         # running the function with no column constraints
-        query = Manager.ExeQuery("SELECT cid, name FROM pragma_table_info('library')")
         Expected = [[k,v] for k, v in enumerate(Manager.db_fields)]
-        assert Expected == Manager.fetchAll(query)
+        assert Expected == Manager.ExeQuery("SELECT cid, name FROM pragma_table_info('library')")
 
         # running the function with column constraints
-        query = Manager.ExeQuery("SELECT cid, name FROM pragma_table_info('library')")
         Expected = [[v] for v in Manager.db_fields]
-        assert Expected == Manager.fetchAll(query, 1)
+        assert Expected == Manager.ExeQuery("SELECT cid, name FROM pragma_table_info('library')", 1)
+        del_TempFilled_DB()
 
-        Manager.close_connection() # cleanup
-
-    def test_indexedSelector(self, DBManager):
-        Manager = DBManager
-
+    def test_indexedSelector(self, TempFilled_DB):
+        Manager, Data = TempFilled_DB
         # check for getting data for a given column
         assert [[None]] == Manager.IndexSelector("nowplaying", "file_name")
-
-        Manager.close_connection() # cleanup
+        del_TempFilled_DB()
 
     def test_CreateView_normal(self, TempFilled_DB):
         Manager, Data = TempFilled_DB
@@ -154,7 +127,6 @@ class Test_DataBaseManager:
                     'ratingX1', 'playcountX1']]
         assert (Expected == Manager.SelectAll("nowplaying"))
         Manager.DropView("nowplaying")
-        Manager.close_connection() # cleanup
 
     def test_CreateView_Shuffled(self, TempFilled_DB):
         Manager, Data = TempFilled_DB
@@ -171,7 +143,6 @@ class Test_DataBaseManager:
                     'ratingX1', 'playcountX1']]
         assert (Expected == Manager.SelectAll("nowplaying"))
         Manager.DropView("nowplaying")
-        Manager.close_connection() # cleanup
 
     def test_CreateView_normal_fieldSelector(self, TempFilled_DB):
         Manager, Data = TempFilled_DB
@@ -188,7 +159,6 @@ class Test_DataBaseManager:
                     'ratingX1', 'playcountX1']]
         assert (Expected == Manager.SelectAll("nowplaying"))
         Manager.DropView("nowplaying")
-        Manager.close_connection() # cleanup
 
     def test_CreateView_filter_fieldSelector_fileID(self, TempFilled_DB):
         Manager, Data = TempFilled_DB
@@ -216,30 +186,27 @@ class Test_DataBaseManager:
                     'ratingX2', 'playcountX2']]
         assert all([(E==A) for E, A in zip(Expected, Manager.SelectAll("nowplaying"))])
         Manager.DropView("nowplaying")
-        Manager.close_connection() # cleanup
 
     def test_DropTable(self, DBManager):
         Manager = DBManager
         Manager.DropTable("library")
 
-        assert not Manager.fetchAll(Manager.ExeQuery("""
+        assert not Manager.ExeQuery("""
 	        SELECT IIF(name = 'library', TRUE, FALSE) AS TABLE_CHECK
         FROM sqlite_master WHERE type = 'table'
-        """))
+        """)
 
-        Manager.close_connection() # cleanup
 
     def test_DropView(self, DBManager):
         Manager = DBManager
 
         Manager.DropView("nowplaying")
 
-        assert not Manager.fetchAll(Manager.ExeQuery("""
+        assert not Manager.ExeQuery("""
 	        SELECT IIF(name = 'nowplaying', TRUE, FALSE) AS TABLE_CHECK
         FROM sqlite_master WHERE type = 'view'
-        """))
+        """)
 
-        Manager.close_connection() # cleanup
 
     def test_TableSize(self, TempFilled_DB):
         Manager, Data = TempFilled_DB
@@ -250,7 +217,6 @@ class Test_DataBaseManager:
         # checks for empty
         assert (Manager.TableSize("nowplaying") == 0)
 
-        Manager.close_connection() # cleanup
 
     def test_TablePlaycount(self, TempFilled_DB):
         Manager, Data = TempFilled_DB
@@ -261,7 +227,6 @@ class Test_DataBaseManager:
         # checks for empty
         assert (Manager.TablePlaycount("nowplaying") == 0)
 
-        Manager.close_connection() # cleanup
 
     def test_TablePlaytime(self, TempFilled_DB):
         Manager, Data = TempFilled_DB
@@ -272,7 +237,6 @@ class Test_DataBaseManager:
         # checks for empty
         assert (Manager.TablePlaytime("nowplaying") == datetime.timedelta(seconds = 0))
 
-        Manager.close_connection() # cleanup
 
     def test_TableAlbumcount(self, TempFilled_DB):
         Manager, Data = TempFilled_DB
@@ -283,7 +247,6 @@ class Test_DataBaseManager:
         # checks for empty
         assert (Manager.TableAlbumcount("nowplaying") == 0)
 
-        Manager.close_connection() # cleanup
 
     def test_TableArtistcount(self, TempFilled_DB):
         Manager, Data = TempFilled_DB
@@ -294,7 +257,6 @@ class Test_DataBaseManager:
         # checks for empty
         assert (Manager.TableArtistcount("nowplaying") == 0)
 
-        Manager.close_connection() # cleanup
 
     def test_TableTrackcount(self, TempFilled_DB):
         Manager, Data = TempFilled_DB
@@ -305,7 +267,6 @@ class Test_DataBaseManager:
         # checks for empty
         assert (Manager.TableTrackcount("nowplaying") == 0)
 
-        Manager.close_connection() # cleanup
 
     def test_TopAlbum(self, TempFilled_DB):
         Manager, Data = TempFilled_DB
@@ -316,7 +277,6 @@ class Test_DataBaseManager:
         # checks for empty
         assert (Manager.TopAlbum("nowplaying") == "")
 
-        Manager.close_connection() # cleanup
 
     def test_Topgenre(self, TempFilled_DB):
         Manager, Data = TempFilled_DB
@@ -327,7 +287,6 @@ class Test_DataBaseManager:
         # checks for empty
         assert (Manager.Topgenre("nowplaying") == "")
 
-        Manager.close_connection() # cleanup
 
     def test_Topartist(self, TempFilled_DB):
         Manager, Data = TempFilled_DB
@@ -338,7 +297,6 @@ class Test_DataBaseManager:
         # checks for empty
         assert (Manager.Topartist("nowplaying") == "")
 
-        Manager.close_connection() # cleanup
 
     def test_Toptrack(self, TempFilled_DB):
         Manager, Data = TempFilled_DB
@@ -349,11 +307,9 @@ class Test_DataBaseManager:
         # checks for empty
         assert (Manager.Toptrack("nowplaying") == "")
 
-        Manager.close_connection() # cleanup
 
 
 class Test_LibraryManager:
 
     def test_LibraryManager(self, LibraryManager_connected):
         Manager = LibraryManager_connected
-        assert Manager.IsConneted()
