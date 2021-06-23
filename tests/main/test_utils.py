@@ -2,7 +2,7 @@ import sys
 import os
 import pytest
 
-from apollo import ConfigManager, PlayingQueue
+from apollo import ConfigManager, PlayingQueue, AppConfig
 
 @pytest.fixture
 def getConfigManager():
@@ -16,53 +16,73 @@ def getConfigManager():
 
         "rows": {
             "elements": {
-            "distance": {
-                "text": "94.6 mi",
-                "value": 152193
-            },
-            "duration": {
-                "text": "1 hour 44 mins",
-                "value": [6227, 1324]
-            },
-            "status": "OK"
+                "distance": {
+                    "text": "94.6 mi",
+                    "value": 152193
+                },
+                "duration": {
+                    "text": "1 hour 44 mins",
+                    "value": [6227, 1324]
+                },
+                "status": "OK"
             }
         },
         "status": "OK"
     }
-    config_manager = ConfigManager()
-    config_manager.config_dict = json_dict
-    return json_dict, config_manager
+    config_manager = AppConfig(json_dict)
+    return config_manager
 
 @pytest.fixture
 def PQ():
     return PlayingQueue()
 
 
-class Test_ConfigManager:
+class Test_AppConfig:
 
     def test_Getvalue(self, getConfigManager):
-        Dict, manager = getConfigManager
-        assert (Dict == manager.Getvalue(path = ""))
-        assert ("94.6 mi" == manager.Getvalue(path = "rows/elements/distance/text"))
-        assert ([6227, 1324] == manager.Getvalue(path = "rows/elements/duration/value"))
-        assert (False == manager.Getvalue(path = "rows/elements/distance/text_NONE"))
+        manager = getConfigManager
+
+        # get data as dict
+        assert {"text": "1 hour 44 mins","value": [6227, 1324]} == manager["rows/elements/duration"]
+        # get data as list
+        assert [6227, 1324] == manager["rows/elements/duration/value"]
+        # get data from a not valid key
+        assert not manager["rows/elements/duration/time"]
+        # get data as str
+        assert "1 hour 44 mins" == manager["rows/elements/duration/text"]
+        # get data at invalid path
+        assert None == manager["rows//duration/text"]
 
 
     def test_Setvalue(self, getConfigManager):
-        Dict, manager = getConfigManager
-        assert (None == manager.Setvalue("TEST", ""))
+        manager = getConfigManager
 
-        manager.Setvalue("TEST", "rows/elements/distance/text")
-        assert ("TEST" == manager.Getvalue("rows/elements/distance/text", Dict))
+        # set data as dict
+        manager["rows/elements/duration"] = {"text": "1 hour 44 mins","value": [6227, 1325]}
+        assert {"text": "1 hour 44 mins","value": [6227, 1325]} == manager["rows/elements/duration"]
 
-        manager.Setvalue("TEST", "rows/elements/duration/value")
-        assert ("TEST" == manager.Getvalue("rows/elements/duration/value", Dict))
+        # set data as list
+        manager["rows/elements/duration/value"] = [6227, 1326]
+        assert  [6227, 1325, 6227, 1326] == manager["rows/elements/duration/value"]
 
-        manager.Setvalue([6227, 13224, "TEST"], "rows/elements/duration/value")
-        assert ([6227, 13224, "TEST"] == manager.Getvalue("rows/elements/duration/value", Dict))
+         # set data as list
+        manager["rows/elements/duration/value"] = 11
+        assert  [6227, 1325, 6227, 1326, 11] == manager["rows/elements/duration/value"]
 
-        manager.Setvalue("TEST", "rows/elements/distance/text_NONE")
-        assert ("TEST" == manager.Getvalue("rows/elements/distance/text_NONE", Dict))
+        # set data from a not valid key
+        manager["rows/elements/duration/time"] = True
+        assert manager["rows/elements/duration/time"]
+
+        # set data as str
+        manager["rows/elements/duration/text"] = "TEST"
+        assert "TEST" == manager["rows/elements/duration/text"]
+
+    def test_DropKey(self, getConfigManager):
+        manager = getConfigManager
+
+        # set data as str
+        manager["rows/elements/duration/text"]
+        assert manager["rows/elements/duration/text"]
 
 
 class Test_PlayingQueue():

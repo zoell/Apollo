@@ -5,7 +5,6 @@ from PySide6.QtCore import QPoint, QRect, QSize, Qt
 
 from apollo.utils import PlayingQueue, exe_time
 from apollo.app.dataproviders import SQLTableModel
-from apollo.gui.ui_NPQ_delegate import Ui_NPQ_WDG_delegate
 from apollo.db import DBFIELDS
 
 

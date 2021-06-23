@@ -25,6 +25,8 @@ class Test_Theme:
         """ teardown any state that was previously setup with a call to
         setup_class.
         """
+        if os.path.isdir(PU.PathJoin(f"{TESTFILES}", "TEST_theme")):
+            PU.PurgeDirectory(PU.PathJoin(f"{TESTFILES}", "TEST_theme")) # cleanup
         if QtWidgets.QApplication.instance() and hasattr(cls, "App"):
             cls.App.quit()
             del cls.App
@@ -61,11 +63,12 @@ class Test_Theme:
 
     def test_ImageOverlay(self):
         theme = Theme()
-        SVG = PU.PathJoin(os.path.split(theme.ROOTPATH)[0], "svg", "app.svg")
+        SVG = PU.PathJoin(os.path.split(Theme.ROOTPATH)[0], "svg", "app.svg")
         THEME = "icon-01"
-        DEST = PU.PathJoin(f"{TESTFILES}","png", "64")
         os.mkdir(PU.PathJoin(f"{TESTFILES}","png"))
         os.mkdir(PU.PathJoin(f"{TESTFILES}","png", "64"))
+
+        DEST = PU.PathJoin(f"{TESTFILES}","png", "64")
         COLOR = QtGui.QColor(theme.DefaultPallete().get(THEME))
 
         assert os.path.isfile(".\\" + theme.ImageOverlay(SVG, THEME, DEST, COLOR, 64))
@@ -113,7 +116,7 @@ class Test_Theme:
             FH.write(SHEET)
 
         theme = Theme()
-        theme.ROOTPATH = TESTFILES
+        Theme.ROOTPATH = TESTFILES
         assert SHEET == theme.GetStyleSheet("TEST_theme")
 
         PU.PurgeDirectory(PU.PathJoin(f"{TESTFILES}", "TEST_theme")) # cleanup
@@ -126,6 +129,6 @@ class Test_Theme:
             FH.write("""from .app_icons import *""")
 
         theme = Theme()
-        theme.ROOTPATH = TESTFILES
+        Theme.ROOTPATH = TESTFILES
         theme.LoadAppIcons("TEST_theme", "tests.testing_tools.test_files")
         PU.PurgeDirectory(PU.PathJoin(f"{TESTFILES}", "TEST_theme")) # cleanup

@@ -1,670 +1,411 @@
-import os, sys, re,shutil
-from queue import Queue
+# type: ignore
+import os, sys, time
+from threading import Thread
+from threading import Event as ThreadEvent
+from typing import Callable
 
-from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtCore import QThread
+from PySide6 import QtCore, QtWidgets, QtGui
+from PySide6.QtCore import QModelIndex, Qt
 
-from apollo.gui.library_manager_ui import Ui_MainWindow
-from apollo.db.library_manager import DataBaseManager, FileManager
-from apollo.app.utils_app.file_explorer import FileExplorer
-from apollo.gui.ledt_dialog import LEDT_Dialog
-
-ApolloLibraryManager = 1
-TEMPCONFIG = {
-    "Default": {
-        "name": "Default",
-        "path": "C:\\Users\\Ommar\\Desktop\\temp\\default.db",
-        "files_monitored": ['D:/Apollo', 'D:/Blender2.92', 'D:/Blockchain-project', 'D:/Program Files',
-                            'D:/Temp', 'D:/blender-addons', 'D:/books', 'D:/class-notes', 'D:/games',
-                            'D:/msys2', 'D:/music', 'D:/python-venv'],
-        "file_extensions": [1, 0, 1, 1, 0, 1, 1],
-    },
-    "Default_2": {
-        "name": "Default_2",
-        "path": "C:\\Users\\Ommar\\Desktop\\temp\\default.db",
-        "files_monitored": ['D:/Apollo', 'D:/Blender2.92', 'D:/Blockchain-project', 'D:/Program Files',
-                            'D:/Temp', 'D:/blender-addons', 'D:/books', 'D:/class-notes', 'D:/games',
-                            'D:/msys2', 'D:/music', 'D:/python-venv'],
-        "file_extensions": [1, 2, 3, 4, 5, 6, 7],
-    },
-    "Default_3": {
-        "name": "Default_3",
-        "path": "C:\\Users\\Ommar\\Desktop\\temp\\default.db",
-        "files_monitored": ['D:/Apollo', 'D:/Blender2.92', 'D:/Blockchain-project', 'D:/Program Files',
-                            'D:/Temp', 'D:/blender-addons', 'D:/books', 'D:/class-notes', 'D:/games',
-                            'D:/msys2', 'D:/music', 'D:/python-venv'],
-        "file_extensions": [1, 2, 3, 4, 5, 6, 7],
-    }
-}
-CURRENTDB = "Default"
-
-class FileScanner_Thread(QThread): # untested
-    """
-    Threads that scans for all files metadata
-    """
-    def __init__(self, DB):
-        """
-        File scanner sub thread that launches,scans and fills file metadata into the database.
-        """
-        super().__init__()
-        self.setObjectName("FileScanner")
-        self.FileManager = FileManager()
-        self.DB = DB
-
-    def connect(self, DB: str):
-        """
-        Launches a thread specific connection to the given DB
-
-        :Args:
-            DB: Database filepath
-        """
-        self.FileManager.connect(DB)
-        return self.FileManager.IsConneted()
-
-    def setQueue(self, queue: Queue):
-        """
-        Sets the Queue that holds the directory names to scan.
-
-        :Args:
-            Queue: File name queue
-        """
-        self.Queue = queue
-
-    def scannerSlot(self, path):
-        """
-        Interface for caller to be reimplemented
-        """
-        pass
-    
-    def run(self):
-        """
-        Main Thread executor that runs the scanner.
-        """
-        try:
-            if self.connect(self.DB):
-                while self.Queue.not_empty:
-                    item = self.Queue.get() 
-                    self.FileManager.ScanDirectory(item[0], item[1], self.scannerSlot)
-            self.FileManager.close_connection()
-            self.finished.emit()
-            self.SCANNING = False
-            self.scannerSlot("Scan Completed")
-        
-        except Exception as e:
-            print(e)
-            self.finished.emit()
-            self.FileManager.close_connection()
-            self.SCANNING = False
+from apollo.gui.ui_library_manager_ui import Ui_MainWindow as LibraryManager_UI
+from apollo.utils import AppConfig
+from apollo.db import LibraryManager, FileManager
+from apollo import PathUtils as PU
+from apollo.app import FileExplorer
 
 
-class FileScanner:
-    """
-    Main Filescanner instance that manages the file scanner thread
-    """
-    def __init__(self, Label):
-        """Constructor"""
-        self.ScannerQueue = Queue()
-        self.SCANNING = False
-        self.Label = Label
+class FilesMonitored_Exp(FileExplorer):
 
-    def setLabelMsg(self, msg: str):
-        """
-        Sets the log message to the statusbar.
-
-        :Args:
-            msg: Msg to display out
-        """
-        self.Label.showMessage(msg)
-
-    def addItem(self, item: ["Path", ["Filters", "Filters", "Filters"]]):
-        """
-        Adds a new item to the file scanner queue that the scanner thread uses to scan directories
-        """
-        self.ScannerQueue.put(item)
-
-    def start(self, DB: str):
-        """
-        launches the scanner when the scan command is called
-
-        :Args:
-            DB: Database file name
-        """
-        def onComplete():
-            self.SCANNING = False
-
-        # launch a thread to connect to a database and start the scan
-        if self.SCANNING == False:
-            self.SCANNING = True
-            Thread = FileScanner_Thread(DB)
-            Thread.setQueue(self.ScannerQueue)
-            Thread.finished.connect(onComplete)
-            Thread.scannerSlot = self.setLabelMsg
-            Thread.start()
-
-            if not Thread.isRunning():
-                self.SCANNING = False
-                raise Warning("Thread Failed to start")
-
-        elif self.SCANNING == True:
-            # ignores the scann call as a thread is currently running
-            print("Thread Scanning Directory")
-
-        else:
-            pass
-        
-        return self.SCANNING
-
-class DBnameFileExp(FileExplorer):
-    
-    def __init__(self):
-        super().__init__()
-        self.subwindow_init()
-        self.UI_Bindings()
-        
-    def subwindow_init(self):
-        self.LEDT_Dialog = LEDT_Dialog()
-        self.LEDT_Dialog.buttonBox.rejected.connect(lambda: self.LEDT_Dialog.close())
-        self.treeView.doubleClicked.connect(lambda x: self.Create_DataBase())
-        
-    def closeEvent(self, Event):
-        self.LEDT_Dialog.close()        
-        
-    def UI_Bindings(self):
-        self.treeView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.treeView.customContextMenuRequested.connect(self.RequestContextMenu)
-            
-    def RequestContextMenu(self, Point):
-        MainMenu = QtWidgets.QMenu()
-        MainMenu.addAction("Add New Folder").triggered.connect(self.Add_New_Folder)
-        MainMenu.addAction("Rename Folder").triggered.connect(self.Rename_Folder)
-        MainMenu.addAction("Delete Folder").triggered.connect(self.Delete_Folder)
-        MainMenu.addAction("Create DataBase").triggered.connect(self.Create_DataBase)
-    
-        Cursor = QtGui.QCursor()
-        MainMenu.exec_(Cursor.pos())        
-        
-    def acceptText(self, text):
-        if text in ["", " "]:
-            return False
-        if re.search("[<>:/\\|?*\"]|[\0-\31]", text):
-            return False
-        else:
-            return True            
-                             
-    def Add_New_Folder(self):
-        
-        def CreateDirectory():
-            Index = list(map(lambda x: self.FilePathModel.filePath(x), self.treeView.selectedIndexes()))
-            if len(Index) != 0 and self.acceptText(self.LEDT_Dialog.lineEdit.text()):                
-                path = os.path.normpath(os.path.join(Index[0], self.LEDT_Dialog.lineEdit.text()))
-                os.mkdir(path)
-            self.LEDT_Dialog.close()
-                      
-        self.LEDT_Dialog.setWindowTitle("Add New Folder")
-        self.LEDT_Dialog.lineEdit.clear()        
-        self.LEDT_Dialog.show()
-        self.LEDT_Dialog.buttonBox.accepted.connect(CreateDirectory)                
-        
-    def Rename_Folder(self):
-        
-        def MoveDirectory():
-            Index = list(map(lambda x: self.FilePathModel.filePath(x), self.treeView.selectedIndexes()))
-            if len(Index) != 0 and self.acceptText(self.LEDT_Dialog.lineEdit.text()):
-                src = Index[0]
-                if (not os.path.ismount(src)):                                
-                    dest = os.path.normpath(os.path.join(os.path.split(src)[0], self.LEDT_Dialog.lineEdit.text()))
-                    os.rename(src, dest)
-                    self.LEDT_Dialog.close()
-                      
-        self.LEDT_Dialog.setWindowTitle("Rename Folder")
-        self.LEDT_Dialog.lineEdit.clear()        
-        self.LEDT_Dialog.show()
-        self.LEDT_Dialog.buttonBox.accepted.connect(MoveDirectory)
-        
-        
-    def Delete_Folder(self):        
-        Index = list(map(lambda x: self.FilePathModel.filePath(x), self.treeView.selectedIndexes()))
-        if len(Index) != 0:
-            src = Index[0]
-            if (not os.path.ismount(src)):                                
-                shutil.rmtree(src)
-                self.LEDT_Dialog.close()
-                                      
-    def SelectedPath(self):
-        Index = list(map(lambda x: self.FilePathModel.filePath(x), self.treeView.selectedIndexes()))
-        if len(Index) != 0:
-            src = Index[0]                               
-            return src
-        else:
-            return ""        
-                
-    def Create_DataBase(self): ...
-                            
-                              
-class MusicFolder_FileExp(FileExplorer):
-    
-    def __init__(self):
+    def __init__(self, ParentView: QtWidgets.QListView):
         super().__init__(_type = "checkbox")
-        self.UI_Bindings()
-        
-    def UI_Bindings(self): ...
-        
-    
-class LibraryManagerTab: 
-    
-    def __init__(self, UI: ApolloLibraryManager, Setup = True):
-        """
-        Library Manager Tab
-        Manages all library related functions.
-        
-        TODO:
-        Binding path management and context menu function for File Exp
-        """
-        self.UI = UI
-        self.FileExt = [".mp3", ".flac", ".m4a", ".wav"] # supported Files
-        if Setup:
-            self.SetUp()
-        
-    def SetUp(self): # No Tests Needed
-        """
-        setup funtion that calls all the sub functions. that init and populate the UI. 
-        """
-        self.DeclareSuWindows()
-        self.UI_Bindings()
-        self.PopulateCMBX(self.UI.apollo_CMBX_LBM_libname)
-        self.PopulateUI(self.UI.CurrentDB)
-        
-    def DeclareSuWindows(self):
-        """
-        initilizes and declares all te subwindows
-        """
-        self.DBFileExp = DBnameFileExp()
-        self.DBFileExp.Create_DataBase = self.Create_NewDB
-        self.DBFileExp.buttonBox.accepted.connect(self.DBFileExp.close)
-        self.DBFileExp.buttonBox.rejected.connect(self.DBFileExp.close)
-        
-        self.MusicFileExp = MusicFolder_FileExp()
-        self.MusicFileExp.buttonBox.accepted.connect(lambda: self.UpdateFilesMon())
-        
-        self.FileScanner = FileScanner(self.UI.statusBar)
-        
-    def call_MusicFileExp(self): # UI dependent
-        """
-        calls the FileExplorer for the files to be added for scanning and updating the database
-        """
-        self.MusicFileExp.FilePathModel.checkStates = {}
-        model = self.UI.apollo_LBM_LSV_filesmon.model()
+        self.ParentView = ParentView
+
+        # Function Bindings
+        self.buttonBox.accepted.connect(lambda: self.FillModel())
+
+    def FillModel(self):
+        Items = self.get_FilePath()
+        Model = QtGui.QStandardItemModel()
+        for R, file_path in enumerate(Items):
+            itm = QtGui.QStandardItem(str(file_path))
+            itm.setCheckable(True)
+            itm.setCheckState(Qt.Checked)
+            Model.insertRow(R,itm)
+        self.ParentView.setModel(Model)
+        self.close()
+
+    def show(self) -> None:
+        # is done to clear old refrences for all old checked files and adds new file refrences
+        self.FilePathModel.checkStates = {}
+        model = self.ParentView.model()
         for item in range(model.rowCount()):
             path = model.index(item, 0).data()
             if os.path.isdir(path):
-                self.MusicFileExp.FilePathModel.checkStates[path] = QtCore.Qt.Checked
-        self.MusicFileExp.show()
-        self.MusicFileExp.raise_()    
-        
-    def CloseSubWindows(self):
-        self.DBFileExp.close()
-        self.MusicFileExp.close()
-        
-    def UI_Bindings(self): # No Tests Needed
-        """
-        Binda all the UI elements with all the valid functions.
-        """
-        def pressed(UI, Function):
-            UI.pressed.connect(Function)
-            
-        self.UI.apollo_CMBX_LBM_libname.currentTextChanged.connect(self.PopulateUI)
-        self.UI.apollo_LEDT_LBM_dbname.textChanged.connect(self.DBname_TextChange)
-        
-        pressed(self.UI.apollo_PSB_LBM_libnext, (lambda: self.IterComboBox(1, self.UI.apollo_CMBX_LBM_libname)))
-        pressed(self.UI.apollo_PSB_LBM_libprev, (lambda: self.IterComboBox(-1, self.UI.apollo_CMBX_LBM_libname)))
-        pressed(self.UI.apollo_PSB_LBM_active, (self.setActiveDB))
-        pressed(self.UI.apollo_PSB_LBM_libadd, (self.Get_Data))
-        pressed(self.UI.apollo_PSB_LBM_export, (self.ExportLibrary))
-        pressed(self.UI.apollo_PSB_LBM_import, (self.ImportLibrary))
-        pressed(self.UI.apollo_PSB_LBM_libremove, (self.RemoveLibrary))
-        pressed(self.UI.apollo_PSB_LBM_librescan, (self.RescanLibrary))
-        pressed(self.UI.apollo_PSB_LBM_libpathedit, (lambda: (self.DBFileExp.show(), self.DBFileExp.raise_())))
-        pressed(self.UI.apollo_PSB_LBM_fileadd, self.call_MusicFileExp)
-        pressed(self.UI.apollo_PSB_LBM_fileremove, self.RemoveFilesMon)
-        pressed(self.UI.apollo_PSB_LBM_filerescan, self.Rescan_File)
-        
-    def Create_NewDB(self): # No tests, but works
-        """
-        Creates a New DB inside the given parent directory.
-        """
-        name = self.UI.apollo_LEDT_LBM_dbname.text()
-        name = name.lower().replace(" ", "_").replace("-", "_")
-        if self.DBFileExp.acceptText(name):            
-            path = os.path.normpath(os.path.join(self.DBFileExp.SelectedPath(), f"{name}.db"))       
-            self.UI.apollo_LEDT_LBM_dbpath.setText(path)
-            if self.UI.DBManager.connect(path):
-                self.UI.DBManager.close_connection()
-        else:
-            self.UI.statusBar.showMessage("DB Path Not valid")
-                
-        
-    def DBname_TextChange(self, text): # No Tests Needed
-        """
-        Called when the DB name and populate the UI if the DB is monitored and
-        clears the UI of the DB is not mOnitored
+                self.FilePathModel.checkStates[path] = QtCore.Qt.Checked
 
-        :Args:
-        text: str
-            the DB text name
-        """
-        if text in self.UI.DB_Monitored.keys():
-            self.PopulateUI(text)
-        else:
-            self.UI.apollo_LEDT_LBM_dbpath.clear()            
-            self.UI.apollo_LBM_LSV_filesmon.setModel(QtGui.QStandardItemModel())
-            self.UI.apollo_LBM_LSV_filters.setModel(QtGui.QStandardItemModel())
-            self.UI.apollo_LEDT_LBM_topalbum.setText("")
-            self.UI.apollo_LEDT_LBM_topgenre.setText("")
-            self.UI.apollo_LEDT_LBM_toptrack.setText("")
-            self.UI.apollo_LEDT_LBM_topartist.setText("")
-            self.UI.apollo_LEDT_LBM_totalbum.setText("")
-            self.UI.apollo_LEDT_LBM_totartist.setText("")
-            self.UI.apollo_LEDT_LBM_totplay.setText("")
-            self.UI.apollo_LEDT_LBM_tottrack.setText("")
-            self.UI.apollo_LEDT_LBM_totsize.setText("")
-            self.UI.apollo_LEDT_LBM_totplaytime.setText("")            
-            
-    def PopulateUI(self, DBname): # No Tests Needed
-        """
-        populate the complete UI with the DB info and stats.        
-
-        :Args:
-        DBname: str
-            the DB text name
-        """
-
-        DBInfo = self.UI.DB_Monitored.get(DBname)
-        if DBInfo == None:
-            return None
-            
-        DBpath = DBInfo.get("path")
-        DBfiles = DBInfo.get("files_monitored")
-        DBext = DBInfo.get("file_extensions")
-        self.UI.DBManager.connect(DBpath)
-                
-        self.UI.apollo_LEDT_LBM_dbname.setText(DBname)
-        self.UI.apollo_LEDT_LBM_dbpath.setText(DBpath)
-        
-        self.PopulateFilesMonitored(DBfiles)        
-        self.PopulateFileExt(DBext)        
-        self.PopulateStats()
-        
-        self.UI.DBManager.close_connection()      
-
-    def PopulateStats(self): # No Tests Needed
-        """
-        Queries the DB and gets the DB stats.
-        """
-        self.UI.apollo_LEDT_LBM_topalbum.setText(str(self.UI.DBManager.TopAlbum())) 
-        self.UI.apollo_LEDT_LBM_topgenre.setText(str(self.UI.DBManager.Topgenre()))
-        self.UI.apollo_LEDT_LBM_toptrack.setText(str(self.UI.DBManager.Toptrack()))
-        self.UI.apollo_LEDT_LBM_topartist.setText(str(self.UI.DBManager.Topartist()))
-        self.UI.apollo_LEDT_LBM_totalbum.setText(str(self.UI.DBManager.TableAlbumcount()))  
-        self.UI.apollo_LEDT_LBM_totartist.setText(str(self.UI.DBManager.TableArtistcount()))
-        self.UI.apollo_LEDT_LBM_totplay.setText(str(self.UI.DBManager.TablePlaycount()))
-        self.UI.apollo_LEDT_LBM_tottrack.setText(str(self.UI.DBManager.TableTrackcount()))
-        self.UI.apollo_LEDT_LBM_totsize.setText(f'{self.UI.DBManager.TableSize()} GB')
-        self.UI.apollo_LEDT_LBM_totplaytime.setText(str(self.UI.DBManager.TablePlaytime()))
-        
-    def PopulateFileExt(self, DBext): # Tested
-        """
-        Populate the LSV with the file extension data that are filtered.
-        
-        :Args:
-        DBext: list[str, str, str]
-            file extensions that is used to scan the FS
-        """
-        if len(DBext) > len(self.FileExt):
-            DBext = DBext[0:len(self.FileExt)]
-        Filesext = QtGui.QStandardItemModel()        
-        Column = []
-        for Item, State in zip(self.FileExt, DBext):
-            Item = QtGui.QStandardItem(Item)
-            Item.setCheckable(True)
-            Item.setTristate(False)
-            if State == 0:               
-                Item.setCheckState(QtCore.Qt.Unchecked)
-            else:
-                Item.setCheckState(QtCore.Qt.Checked)
-            Column.append(Item)            
-        Filesext.appendColumn(Column)
-        self.UI.apollo_LBM_LSV_filters.setModel(Filesext)
-        
-    def PopulateFilesMonitored(self, DBfiles):  
-        """
-        Populate the LSV with the file path data that are filtered.
-        
-        :Args:
-        DBfiles: list[str, str, str]
-            file path that is used to scan the FS
-        """  
-        Filesmodel = QtGui.QStandardItemModel()        
-        Column = []
-        for Item in map(str, DBfiles):
-            Item = QtGui.QStandardItem(str(Item))
-            Item.setCheckable(True)
-            Item.setTristate(False)
-            Item.setCheckState(QtCore.Qt.Checked)
-            Column.append(Item)            
-        Filesmodel.appendColumn(Column)       
-        self.UI.apollo_LBM_LSV_filesmon.setModel(Filesmodel)
-        
-    
-    def PopulateCMBX(self, CMBX: QtWidgets.QComboBox, Data = None): # Tested
-        """
-        Populates the CMBX with the data provided
-
-        :Args:
-        CMBX: QtWidgets.QComboBox
-            Combobox with all the DB names.
-        Data: list[str, str, str]
-            data to fill in the combobox
-        """
-        if Data == None:
-            DBnames = self.UI.DB_Monitored.keys()
-        else:
-            DBnames = Data
-            
-        [CMBX.removeItem(item) for item in range(CMBX.count())]
-        CMBXitems = [CMBX.itemText(item) for item in range(CMBX.count())]
-        for Name in DBnames:
-            if Name not in CMBXitems:
-                CMBX.addItem(Name)
-                
-        
-    def Get_FileExt(self): # Tested
-        """
-        Gets the file extensions and their check state
-        """
-        Model = self.UI.apollo_LBM_LSV_filters.model()
-        Ext_state = [Model.index(r, 0).data(QtCore.Qt.CheckStateRole) for r in range(Model.rowCount())]
-        if Ext_state == []:
-            return Ext_state
-        Ext_state = [state for indx, state in enumerate(self.FileExt) if Ext_state[indx] == 2]
-        return Ext_state
-        
-    def Get_FileMon(self): # Tested
-        """
-        Gets the file paths and their check state
-        """
-        Model = self.UI.apollo_LBM_LSV_filesmon.model()
-        file_paths = [Model.index(r, 0).data() for r in range(Model.rowCount())]
-        return file_paths
-    
-    def Get_Data(self):
-        DBname = self.UI.apollo_LEDT_LBM_dbname.text()
-        if DBname in ["", " "]:
-            self.UI.statusBar.showMessage("DB name is empty")
-            return None    
-        else:                
-            DBnewname = DBname.replace(" ", "_").replace("-", "_").lower() + ".db"
-                    
-        # root path bug, raise an error
-        DBpath = self.UI.apollo_LEDT_LBM_dbpath.text()
-        if DBpath in ["", " "]:
-            self.UI.statusBar.showMessage("DB path is empty")
-            return None            
-        else:
-            if DBpath.find("\\"):
-                DBpath = os.path.join(f"{os.path.split(DBpath)[0]}", DBnewname)
-            else:                
-                DBpath = os.path.join(f"{DBpath}", DBnewname)
-                
-        
-        DBfile_ext = self.Get_FileExt()
-        DBfile_Paths = self.Get_FileMon()
-        
-        print(DBname, DBpath, DBfile_ext, DBfile_Paths)
-
-    
-    def IterComboBox(self, direction: int, CMBX: QtWidgets.QComboBox): # Tested
-        """
-        Iters and loads the corresponding for all the DB that have been declared for Apollo
-
-        :Args:
-        direction: int
-            Direction for the list to iter in (Forward/Backward)
-        CMBX: QtWidgets.QComboBox
-            Combobox with all the DB names.
-        """
-        Index = CMBX.currentIndex() + (direction)
-        if Index == CMBX.count():
-            Index = 0
-        elif Index < 0:
-            Index = CMBX.count() - 1
-        else:
-            pass
-        CMBX.setCurrentIndex(Index)   
-        
-    def UpdateFilesMon(self):
-        """"""
-        Files = self.MusicFileExp.get_FilePath()
-        self.PopulateFilesMonitored(Files)
-        self.MusicFileExp.close()
-        
-    def RemoveFilesMon(self):
-        """
-        Issues:
-        rows deletion fails
-        """
-        model = self.UI.apollo_LBM_LSV_filesmon.model()
-        selected = list(map(lambda x: x.row(), self.UI.apollo_LBM_LSV_filesmon.selectedIndexes()))        
-        if len(selected) == model.rowCount():
-            self.UI.apollo_LBM_LSV_filesmon.setModel(QtGui.QStandardItemModel())
-            return None                
-        
-        if selected != 0:                        
-            model.beginRemoveRows(QtCore.QModelIndex(), selected[0], selected[-1])
-            for r in selected:
-                print(model.removeRow(r))
-            model.endRemoveRows()
-        
-    def setActiveDB(self):
-        DBname = self.UI.apollo_CMBX_LBM_libname.currentText()
-        print(DBname)
-        
-    def ImportLibrary(self):
-        print("Not Implemented")
-    
-    def ExportLibrary(self):
-        print("Not Implemented")
-        
-    def RemoveLibrary(self):
-        RemoveDB = self.UI.apollo_LEDT_LBM_dbname.text()
-        if RemoveDB == "":
-            return None
-        
-        self.UI.DB_Monitored.pop(RemoveDB)
-        self.UI.apollo_LEDT_LBM_dbname.setText('')
-        self.PopulateCMBX(self.UI.apollo_CMBX_LBM_libname)        
-        self.UI.CurrentDB = self.UI.apollo_CMBX_LBM_libname.currentText()
-        
-        print(self.UI.CurrentDB)
-        
-    def Rescan_File(self):
-        selected = list(map(lambda x: os.path.normpath(x.data()), self.UI.apollo_LBM_LSV_filesmon.selectedIndexes()))
-        model = self.UI.apollo_LBM_LSV_filters.model()
-        EXT = [model.index(r, 0).data() for r in range(model.rowCount())]
-        for file in selected:            
-            self.FileScanner.addItem([file, EXT])
-        self.FileScanner.start(self.UI.apollo_LEDT_LBM_dbpath.text())        
-    
-    def RescanLibrary(self):
-        model = self.UI.apollo_LBM_LSV_filesmon.model()
-        selected = [model.index(r, 0).data() for r in range(model.rowCount())]
-
-        model = self.UI.apollo_LBM_LSV_filters.model()
-        EXT = [model.index(r, 0).data() for r in range(model.rowCount())]
-        for file in selected:            
-            self.FileScanner.addItem([file, EXT])
-        self.FileScanner.start(self.UI.apollo_LEDT_LBM_dbpath.text())
-            
-                  
-class FileManagerTab: 
-    
-    def __init__(self, UI: ApolloLibraryManager):
-        self.UI = UI
+        super().raise_()
+        return super().show()
 
 
-class ApolloLibraryManager(Ui_MainWindow, QtWidgets.QMainWindow):
-    """"""
+class DBnameFileExp(FileExplorer):
+
+    def __init__(self, NameEdit: QtWidgets.QLineEdit, PathEdit: QtWidgets.QLineEdit):
+        super().__init__()
+        self.NameEdit = NameEdit
+        self.PathEdit = PathEdit
+        self.UI_Bindings()
+
+    def UI_Bindings(self):
+        self.buttonBox.accepted.connect(self.AcceptPath)
+        self.buttonBox.rejected.connect(self.close)
+
+        self.treeView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.treeView.customContextMenuRequested.connect(self.RequestContextMenu)
+
+    def RequestContextMenu(self, Point):
+        MainMenu = QtWidgets.QMenu()
+        MainMenu.addAction("Add New Folder")
+        MainMenu.addAction("Select Folder").triggered.connect(self.SelectedPath)
+        MainMenu.addAction("Rename Folder")
+        MainMenu.addAction("Delete Folder")
+        MainMenu.addAction("Create DataBase")
+
+        Cursor = QtGui.QCursor()
+        MainMenu.exec(Cursor.pos())
+
+    def SelectedPath(self):
+        Index = self.treeView.selectedIndexes()
+        if len(Index) != 0:
+            NAME = self.NameEdit.text()
+            OG_path = self.FilePathModel.filePath(Index[0])
+            NEW_path = PU.PathJoin(OG_path, f"{NAME}.db".replace(" ","_").lower())
+            self.PathEdit.setText(NEW_path)
+
+    def AcceptPath(self):
+        self.OGPATH = self.PathEdit.text()
+        self.close()
+
+    def show(self):
+        self.OGPATH = self.PathEdit.text()
+        super().raise_()
+        return super().show()
+
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+        self.PathEdit.setText(self.OGPATH)
+        return super().closeEvent(event)
+
+
+class FileScanner_Thread(Thread): # untested
+    FILE_FILTERS = ["MP3", "AAC", "M4A", "MPC", "OGG", "FLAC",
+                    "ALAC", "APE", "Opus", "TAK", "WavPack",
+                    "WMA", "WAV", "MIDI", "MOD", "UMX", "XM"]
+
+    def __init__(self, FileQueue: list, Ext: list, DB_name: str, Slot: Callable = lambda x: ''):
+        super().__init__()
+        self.daemon = False
+        self.name = "FileScanner_Thread"
+        self.FileQueue = FileQueue
+        self.Slot = Slot
+        self.Extension = [K for K, V in zip(FileScanner_Thread.FILE_FILTERS, Ext) if V == 1]
+        self.Manager = LibraryManager(DB_name)
+        self.DeclareEvents()
+
+    def run(self) -> None:
+        while self.Running.is_set():
+            if self.Pause.is_set():
+                time.sleep(0.1)
+                continue
+            if self.Scanning.is_set():
+                for Dir in self.FileQueue:
+                    self.Manager.ScanDirectory(Dir, self.Extension, self.Slot)
+                self.Scanning.clear()
+                self.exit()
+
+    def exit(self):
+        self.Running.clear()
+
+    def DeclareEvents(self):
+        self.Running = ThreadEvent()
+        self.Scanning = ThreadEvent()
+        self.Pause = ThreadEvent()
+        self.Pause.clear()
+
+    def start(self):
+        self.Running.set()
+        self.Scanning.set()
+        super().start()
+        return self
+
+class LibraryManager_App(QtWidgets.QMainWindow, LibraryManager_UI):
+
+    LBT_CURRENT_LOADED_DB = ""
+    LBT_FILE_FILTERS = ["MP3", "AAC", "M4A", "MPC", "OGG", "FLAC",
+                        "ALAC", "APE", "Opus", "TAK", "WavPack",
+                        "WMA", "WAV", "MIDI", "MOD", "UMX", "XM"]
 
     def __init__(self):
-        """Constructor"""
+        """
+        Class Constructor
+        """
         super().__init__()
-        self.setupUi(self)        
-    
-        self.DBManager = DataBaseManager()
-        self.LibraryManagerTab = LibraryManagerTab(self)
-        self.FileManagerTab = FileManagerTab(self)
+        self.setupUi(self)
+        self.Theme = None
+        self.LibManager = LibraryManager()
+        self.Config = AppConfig()
+        self.InternalState_Flags()
 
-    def closeEvent(self, Event):
-        self.LibraryManagerTab.CloseSubWindows()
+        self.BindingFunctions()
+        self.UpadateComboBox()
+        self.fillData(self.Config["CURRENT_DB"])
 
-    @property
-    def CurrentDB(self):
-        return CURRENTDB
-    
-    @CurrentDB.setter
-    def CurrentDB(self, value):
-        CURRENTDB = value
-    
-    @property
-    def DB_Monitored(self):
-        return TEMPCONFIG
-    
-    @DB_Monitored.setter
-    def DB_Monitored(self, value):
-        TEMPCONFIG = value
-      
+    def InternalState_Flags(self):
+        self.FileScannerRunning = 1
+
+    def BindingFunctions(self):
+        """
+        Connects all the function to all the buttons
+        """
+        self.LBT_CMBX_libname.currentTextChanged.connect(lambda name: (
+            self.fillData(DB_name = name)
+            )
+        )
+        self.LBT_LEDT_dbname.returnPressed.connect(self.DBName_Changed)
+        self.LBT_PSB_fileadd.clicked.connect(self.FileExp_MonitoredFiles_launch)
+        self.LBT_PSB_libpathedit.clicked.connect(self.FileExp_DBDir_launch)
+        self.LBT_PSB_filerescan.clicked.connect(self.RescanFolders)
+
+        self.LBT_PSB_libadd.clicked.connect(lambda: self.DBName_Changed("SAVE_NEW"))
+        self.LBT_PSB_libnext.clicked.connect(lambda: (self.DB_LEDT_TextChange()))
+        self.LBT_PSB_libprev.clicked.connect(lambda: (self.DB_LEDT_TextChange(-1)))
+
+
+    def UpadateComboBox(self):
+        Model = self.LBT_CMBX_libname.model()
+        Model.removeRows(0, self.LBT_CMBX_libname.count())
+        for indx, Key in enumerate(self.Config["MONITERED_DB"].keys()):
+            Model.insertRow(indx, QtGui.QStandardItem(str(Key)))
+
+        # sets the current Loaded item in CMBX
+        for idx in range(self.LBT_CMBX_libname.count()):
+            if self.LBT_CMBX_libname.itemText(idx) == self.Config["CURRENT_DB"]:
+                self.LBT_CMBX_libname.setCurrentIndex(idx)
+
+    def RescanFolders(self):
+        self.statusBar.showMessage("Scanning For Files! This Might Take A While")
+
+        # gets the selected File
+        Model = self.LBT_LSV_filesmon.model()
+        FILE_MON = []
+        for R in range(Model.rowCount()):
+            Data = Model.index(R, 0)
+            if (Data.data(QtCore.Qt.CheckStateRole) == QtCore.Qt.Checked):
+                FILE_MON.append(Data.data())
+
+        # gets the selected FileExt
+        Model = self.LBT_LSV_filters.model()
+        FILTERS = []
+        for R in range(Model.rowCount()):
+            Data = Model.index(R, 0)
+            if (Data.data(QtCore.Qt.CheckStateRole) == QtCore.Qt.Checked):
+                FILTERS.append(1)
+            else:
+                FILTERS.append(0)
+
+        DB = (self.Config[f"MONITERED_DB/{self.LBT_CMBX_libname.currentText()}/db_loc"])
+        ScannerThread = FileScanner_Thread(FILE_MON, FILTERS, DB, lambda m: self.statusBar.showMessage(m))
+        ScannerThread.start()
+
+    def fillData(self, DB_name):
+        """
+        FIll ths UI with Data Corresponding to the DB file open
+
+        Parameters
+        ----------
+        _type : str, optional
+            Type of data to be refreshed, by default ""
+        DB_name: str, optional
+            DB name to load data for, bu default None
+        """
+        if DB_name == "":
+            return None
+        LibraryManager_App.LBT_CURRENT_LOADED_DB = DB_name
+
+        path = (self.Config[f"MONITERED_DB/{DB_name}/db_loc"])
+        self.LBT_LEDT_dbname.setText(str(DB_name))
+        self.LBT_LEDT_dbpath.setText(str(path))
+
+        # Updates DB stats
+        self.LibManager.connect(path, Check = True)
+        self.LBT_LEDT_totartist.setText(f"{str(self.LibManager.TableArtistcount())} Artists")
+        self.LBT_LEDT_totalbum.setText(f"{str(self.LibManager.TableAlbumcount())} Albums")
+        self.LBT_LEDT_tottrack.setText(f"{str(self.LibManager.TableTrackcount())} Tracks")
+        self.LBT_LEDT_totplaytime.setText(f"{str(self.LibManager.TablePlaytime())}")
+        self.LBT_LEDT_totsize.setText(f"{str(self.LibManager.TableSize())} GB")
+        self.LBT_LEDT_topartist.setText(f"{str(self.LibManager.Topartist())}")
+        self.LBT_LEDT_toptrack.setText(f"{str(self.LibManager.Toptrack())}")
+        self.LBT_LEDT_topalbum.setText(f"{str(self.LibManager.TopAlbum())}")
+        self.LBT_LEDT_topgenre.setText(f"{str(self.LibManager.Topgenre())}")
+        self.LBT_LEDT_totplay.setText(f"{str(self.LibManager.TablePlaycount())} Plays")
+
+        # Updates DB files
+        paths = (self.Config[f"MONITERED_DB/{DB_name}/file_mon"])
+        Model = QtGui.QStandardItemModel()
+        for R, file_path in enumerate(paths):
+            itm = QtGui.QStandardItem(str(file_path))
+            itm.setCheckable(True)
+            itm.setCheckState(Qt.Checked)
+            Model.insertRow(R,itm)
+        self.LBT_LSV_filesmon.setModel(Model)
+
+        #Updates DB ext Filters
+        filters = (self.Config[f"MONITERED_DB/{DB_name}/filters"])
+        Model = QtGui.QStandardItemModel()
+        for (R, state), filt in zip(enumerate(filters), LibraryManager_App.LBT_FILE_FILTERS):
+            itm = QtGui.QStandardItem(str(filt))
+            itm.setCheckable(True)
+            if state == 1:
+                itm.setCheckState(Qt.Checked)
+            else:
+                itm.setCheckState(Qt.Unchecked)
+            Model.insertRow(R,itm)
+        self.LBT_LSV_filters.setModel(Model)
+
+    def DBName_Changed(self, _type: str = "RENAME"):
+        """
+        Reacts to the change of teh DB name in the input LineEdit
+
+        Parameters
+        ----------
+        _type : str, optional
+            Type of operation to perform, by default "RENAME"
+
+        Returns
+        -------
+        None
+            If the DB name is not valid
+        """
+        if not PU.WinPathValidator(self.LBT_LEDT_dbname.text()):
+            return None
+
+        if self.LBT_CMBX_libname.currentText() == self.LBT_LEDT_dbname.text():
+            return None
+
+        OG_NAME = self.LBT_CMBX_libname.currentText()
+        NEW_NAME = self.LBT_LEDT_dbname.text()
+        OG_path = self.LBT_LEDT_dbpath.text()
+        NEW_path = PU.PathJoin(os.path.split(OG_path)[0], f"{NEW_NAME}.db".replace(" ","_").lower())
+
+        if _type == "RENAME": # renames the DB and the file too
+            self.LBT_LEDT_dbpath.setText(NEW_path)
+            os.rename(src = OG_path, dst = NEW_path)
+
+            # writes new config and deletes the old config
+            self.Config[f"MONITERED_DB/{NEW_NAME}"] = {
+                "name": NEW_NAME,
+                "db_loc": NEW_path,
+                "file_mon": (self.Config[f"MONITERED_DB/{OG_NAME}/file_mon"]),
+                "filters": (self.Config[f"MONITERED_DB/{OG_NAME}/filters"])
+            }
+            del self.Config[f"MONITERED_DB/{OG_NAME}"]
+
+        if _type == "SAVE_NEW": # saves a new DB file
+            # gets the files that are currently scanned and loaded data for
+            Model = self.LBT_LSV_filters.model()
+            FILTERS = []
+            for R in range(Model.rowCount()):
+                Data = Model.index(R, 0)
+                if (Data.data(QtCore.Qt.CheckStateRole) == QtCore.Qt.Checked):
+                    FILTERS.append(1)
+                else:
+                    FILTERS.append(0)
+
+            # get the file filters for the DB
+            Model = self.LBT_LSV_filesmon.model()
+            FILE_MON = []
+            for R in range(Model.rowCount()):
+                Data = Model.index(R, 0)
+                if (Data.data(QtCore.Qt.CheckStateRole) == QtCore.Qt.Checked):
+                    FILE_MON.append(Data.data())
+
+            # adds the new DB info to the config
+            self.Config[f"MONITERED_DB/{NEW_NAME}"] = {
+                "name": NEW_NAME,
+                "db_loc": NEW_path,
+                "file_mon": FILE_MON,
+                "filters": FILTERS
+            }
+        self.Config["CURRENT_DB"] = NEW_NAME
+        self.UpadateComboBox()
+
+    def FileExp_MonitoredFiles_launch(self):
+        """
+        Launces a file Explorer for the moonitored file listview to add directories
+        """
+        if not hasattr(self, "FileExp_mon"):
+            self.FileExp_mon = FilesMonitored_Exp(self.LBT_LSV_filesmon)
+            self.Theme.SetSheet(self.FileExp_mon)
+
+        self.FileExp_mon.show()
+
+    def FileExp_DBDir_launch(self):
+        """
+        Launches a FileExplorer for the DB path to add a directory path that the DB will be placed
+        """
+        if not hasattr(self, "FileExp_db"):
+            self.FileExp_db = DBnameFileExp(self.LBT_LEDT_dbname, self.LBT_LEDT_dbpath)
+            self.Theme.SetSheet(self.FileExp_db)
+
+        self.FileExp_db.show()
+
+    def DB_LEDT_TextChange(self, offset: int = 1):
+        """
+        Cycles through all the DB that are added to the config
+
+        Parameters
+        ----------
+        offset : int, optional
+            goes forward or backward accordint to offset, by default 1
+        """
+        # resets for pointer at end
+        if (self.LBT_CMBX_libname.count() <= (self.LBT_CMBX_libname.currentIndex() + offset)):
+            self.LBT_CMBX_libname.setCurrentIndex(0)
+        # resets for pointer at 0
+        elif (0 > (self.LBT_CMBX_libname.currentIndex() + offset)):
+            self.LBT_CMBX_libname.setCurrentIndex(self.LBT_CMBX_libname.count() - 1)
+        # back or forward
+        else:
+            self.LBT_CMBX_libname.setCurrentIndex(self.LBT_CMBX_libname.currentIndex() + offset)
+
+    def closeEvent(self, event: QtGui.QCloseEvent):
+        """
+        CLoses the UI and realted sub windows
+
+        Parameters
+        ----------
+        event : QtGui.QCloseEvent
+            CLose event of main window
+        """
+        if hasattr(self, "FileExp_db"): self.FileExp_db.close()
+        if hasattr(self, "FileExp_mon"): self.FileExp_mon.close()
+        return super().closeEvent(event)
+
+
 if __name__ == "__main__":
-    from apollo.resources.apptheme.theme import Theme
-    from apollo.resources.apptheme import style
-    
+    from apollo.plugins.app_theme import Theme
+
+    def themeUpdate(Theme_obj):
+        STYLESHEET = (Theme_obj.GenStyleSheet(Theme.THEME))
+        Theme.STYLESHEET = STYLESHEET
+        return STYLESHEET
+
     app = QtWidgets.QApplication([])
     app.setStyle("Fusion")
-    UI = ApolloLibraryManager()
-        
-    
-    def LoadTheme():
-        with open("stylesheet.css") as sheet:
-            stylesheet = sheet.read().split("\n")
-            stylesheet = Theme().GenStylesheet(pallete = eval(Theme().DefaultPallete())["THEME"], stylesheet = stylesheet)
-            app.setStyleSheet(stylesheet)
-        
-    LoadTheme()
-    
-    UI.apollo_PSB_LBM_import.pressed.connect(LoadTheme)
-    UI.apollo_PSB_MDE_undo.pressed.connect(LoadTheme)
-    #Timer = QtCore.QTimer()
-    #Timer.setInterval(300)
-    #Timer.timeout.connect(LoadTheme)
-    #Timer.start()
-    
+    Theme_obj = Theme(App = app)
+
+    UI = LibraryManager_App()
+    UI.Theme = Theme_obj
+
+    UI.LBT_PSB_import.pressed.connect(lambda: app.setStyleSheet(themeUpdate(Theme_obj)))
+
     UI.show()
-    app.exec_()
+    app.exec()

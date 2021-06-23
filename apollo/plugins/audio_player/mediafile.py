@@ -49,13 +49,12 @@ class MP3:
         self.FILEPATH = path
         self.Metadata = self.GetMetadata()
 
-    @exe_time
     def GetMetadata(self):
         Media = mutagen.File(self.FILEPATH, easy = True)
         metadata = dict.fromkeys(DBFIELDS, "")
 
         for key in Media.keys():
-            metadata[key] = Media.get(key, "NA")[0]
+            metadata[key] = Media.get(key, [""])[0]
         metadata["bitrate_mode"] = str(Media.info.bitrate_mode).replace('BitrateMode', "").replace('.', "")
         metadata['album_gain'] = Media.info.album_gain
         metadata['encoder_info'] = Media.info.encoder_info
@@ -97,7 +96,7 @@ class WAVE:
         metadata = dict.fromkeys(DBFIELDS, "")
 
         for key in Media.keys():
-            metadata[key] = Media.get(key, "NA")[0]
+            metadata[key] = Media.get(key, [""])[0]
 
         Media = mutagen.File(self.FILEPATH, easy = True)
         metadata['sample_rate'] = f"{Media.info.sample_rate}Hz"
@@ -129,9 +128,9 @@ class FLAC:
         metadata = dict.fromkeys(DBFIELDS, "")
 
         for key in Media.keys():
-            metadata[key] = Media.get(key, "NA")[0]
+            metadata[key] = Media.get(key, [""])[0]
 
-        metadata['encoder_info'] = Media.get("encoder")[0]
+        metadata['encoder_info'] = Media.get("encoder", [""])[0]
         metadata['sample_rate'] = f"{Media.info.sample_rate}Hz"
         metadata["length"] = str(datetime.timedelta(seconds = Media.info.length))
         metadata["bitrate"] = f"{int(Media.info.bitrate / 1000)} Kbps"
@@ -160,7 +159,7 @@ class MP4:
         metadata = dict.fromkeys(DBFIELDS, "")
 
         for key in Media.keys():
-            metadata[key] = Media.get(key, "NA")[0]
+            metadata[key] = Media.get(key, [""])[0]
         metadata['encoder_info'] = Media.info.codec_description
         metadata['encoder_settings'] = Media.info.codec
         metadata['sample_rate'] = f"{Media.info.sample_rate}Hz"
@@ -180,7 +179,7 @@ class MP4:
         Artwork = {3: data for data in Artwork}
         return Artwork
 
-
+# @exe_time
 class MediaFile(dict):
 
     def __init__(self, file: str):
@@ -188,14 +187,14 @@ class MediaFile(dict):
         if not os.path.isfile(file):
             raise FileNotFoundError()
 
-        EXT = os.path.splitext(file)[1]
-        if EXT in [".mp3"]:
+        EXT = os.path.splitext(file)[1].upper().replace(".", "")
+        if EXT in ["MP3"]:
             self.Media = MP3(file)
-        elif EXT in [".wav"]:
+        elif EXT in ["WAV"]:
             self.Media = WAVE(file)
-        elif EXT in [".flac"]:
+        elif EXT in ["FLAC"]:
             self.Media = FLAC(file)
-        elif EXT in [".m4a"]:
+        elif EXT in ["M4A"]:
             self.Media = MP4(file)
         else:
             raise Exception(f"{EXT}: File Format Not Implemented")
@@ -213,7 +212,7 @@ class MediaFile(dict):
         return json.dumps(self.Media.Metadata, indent = 2)
 
     def getMetadata(self):
-        return self.Media.getMetadata()
+        return self.Media.GetMetadata()
 
     def getArtwork(self):
         ArtworkInfo = {0: "OTHER",

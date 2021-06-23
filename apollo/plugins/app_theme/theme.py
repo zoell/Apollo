@@ -1,9 +1,6 @@
-import os
-import sys
-import re
-import importlib
-import subprocess
-import json
+import sys, re, importlib, subprocess, json, os
+from posixpath import ismount
+from typing import Any
 
 from PySide6 import QtWidgets, QtGui, QtCore
 
@@ -18,31 +15,47 @@ class Theme:
     """
     Theme class for application
     """
-    def __init__(self, Name = "", App = None):
+    ROOTPATH = PU.PathJoin(PARENT_DIR, "plugins", "app_theme", "theme_packs")
+    STYLESHEET = ""
+    THEME = ""
+
+    def __init__(self, App: QtWidgets.QWidget = None, Name: str = ""):
         """
         Class Constructor
         """
-        self.ROOTPATH = PU.PathJoin(PARENT_DIR, "plugins", "app_theme", "theme_packs")
         self.ThemeConfig = AppConfig()
 
-        if not os.path.isdir(self.ROOTPATH): # pragma: no cover
-            os.mkdir(self.ROOTPATH)
-            if not os.path.isfile(PU.PathJoin(self.ROOTPATH, "__init__.py")):
+        if not os.path.isdir(Theme.ROOTPATH): # pragma: no cover
+            os.mkdir(Theme.ROOTPATH)
+            if not os.path.isfile(PU.PathJoin(Theme.ROOTPATH, "__init__.py")):
                 # Creates an Import
-                with open(PU.PathJoin(self.ROOTPATH, "__init__.py"), "w") as FH:
+                with open(PU.PathJoin(Theme.ROOTPATH, "__init__.py"), "w") as FH:
                     FH.write("from . import *")
-            if not os.path.isdir(PU.PathJoin(self.ROOTPATH, "GRAY_100")):
-                self.CreateThemePack(self.ROOTPATH, "GRAY_100", self.DefaultPallete())
+            if not os.path.isdir(PU.PathJoin(Theme.ROOTPATH, "GRAY_100")):
+                self.CreateThemePack(Theme.ROOTPATH, "GRAY_100", self.DefaultPallete())
 
         if Name == "":
             self.LoadTheme(self.ThemeConfig["ACTIVETHEME"], App)
         else:
             self.LoadTheme(Name, App)
 
-    def get(self, key):
-        return self.pallete.get(key)
+    def get(self, key: Any):
+        """
+        returns a given colour form the pallete
 
-    def LoadTheme(self, name = "", app = None): # pragma: no cover
+        Parameters
+        ----------
+        key : Any
+            colour name
+
+        Returns
+        -------
+        str
+            colour value
+        """
+        return Theme.THEME.get(key)
+
+    def LoadTheme(self, name: str = "", app: QtWidgets.QApplication = None): # pragma: no cover
         """
         Loads the theme for the given Application
 
@@ -56,55 +69,82 @@ class Theme:
         if name == "":
             name = self.ThemeConfig["ACTIVETHEME"]
 
-        if name in os.listdir(self.ROOTPATH):
-            self.sheet = self.GetStyleSheet(name)
-            self.pallete = self.GetPallete(name)
+        if name in os.listdir(Theme.ROOTPATH):
+            Theme.STYLESHEET = self.GetStyleSheet(name)
+            Theme.THEME = self.GetPallete(name)
             self.LoadAppIcons(name)
             if app:
-                app.setStyleSheet(self.sheet)
+                app.setStyleSheet(Theme.STYLESHEET)
 
-    def GetStyleSheet(self, Name = ""):
+    def GetStyleSheet(self, Name: str = ""):
         """
-        Info: Get the style sheet for the theme
-        Args:
-        Name: String
-            -> theme name
-        Returns: String
-        Errors: None
+        Get the style sheet for the theme
+
+        Parameters
+        ----------
+        Name : str, optional
+            theme name, by default ""
+
+        Returns
+        -------
+        str
+            Stylesheet fot the given theme
+
+        Raises
+        ------
+        ThemeLoadFailed
+            raised if the stylesheet doesnt exist
         """
-        if os.path.isfile(PU.PathJoin(self.ROOTPATH, Name, "stylesheet.css")):
-            with open(PU.PathJoin(self.ROOTPATH, Name, "stylesheet.css")) as FH:
+        if os.path.isfile(PU.PathJoin(Theme.ROOTPATH, Name, "stylesheet.css")):
+            with open(PU.PathJoin(Theme.ROOTPATH, Name, "stylesheet.css")) as FH:
                 Stylesheet = FH.read()
             return Stylesheet
         else:
             raise ThemeLoadFailed("Stylesheet Not avaliable")
 
-    def GetPallete(self, Name = ""):
+    def GetPallete(self, Name: str = ""):
         """
-        Info: Get the style sheet for the theme
-        Args:
-        Name: String
-            -> theme name
-        Returns: String
-        Errors: None
+        Get the style sheet for the theme
+
+        Parameters
+        ----------
+        Name : str, optional
+            theme name, by default ""
+
+        Returns
+        -------
+        dict
+            pallete for the loaded theme
+
+        Raises
+        ------
+        ThemeLoadFailed
+            raised if the json pallete doest exist
         """
-        if os.path.isfile(PU.PathJoin(self.ROOTPATH, Name, "theme.json")):
-            with open(PU.PathJoin(self.ROOTPATH, Name, "theme.json")) as FH:
+        if os.path.isfile(PU.PathJoin(Theme.ROOTPATH, Name, "theme.json")):
+            with open(PU.PathJoin(Theme.ROOTPATH, Name, "theme.json")) as FH:
                 Pallete = json.load(FH)
             return Pallete
         else:
             raise ThemeLoadFailed("Pallete Not avaliable")
 
-    def LoadAppIcons(self, Name = "", PKG = None):
+    def LoadAppIcons(self, Name: str = "", PKG: str = None):
         """
-        Info: Loads the style sheet for the theme
-        Args:
-        Name: String
-            -> theme name
-        Returns: None
-        Errors: None
+        Loads the style sheet for the theme
+
+        Parameters
+        ----------
+        Name : str, optional
+            theme name, by default ""
+        PKG : str, optional
+            Package name, by default None
+
+        Raises
+        ------
+        ThemeLoadFailed
+            is raised when the theme icon pack doesnt exist
         """
-        if os.path.isfile(PU.PathJoin(self.ROOTPATH, Name, "app_icons.py")):
+        if os.path.isfile(PU.PathJoin(Theme.ROOTPATH, Name, "app_icons.py")):
             if PKG != None:
                 importlib.import_module(f".{Name}", PKG)
             else:
@@ -112,16 +152,18 @@ class Theme:
         else:
             raise ThemeLoadFailed("Resource Not avaliable")
 
-    def CreateThemePack(self, Dest, Name, pallete): #tested
+    def CreateThemePack(self, Dest: str, Name: str, pallete: dict): #tested
         """
-        Info: Creates a Theme Pack
-        Args:
-        Name: String
-            -> name of the theme pack
-        pallete: Dict
-            -> Dict oft the color pallete
-        Returns: None
-        Errors: None
+        Creates a theme pack using the given theme pallete
+
+        Parameters
+        ----------
+        Dest : str
+            Dest Directory
+        Name : str
+            Name of the theme Pallete
+        pallete : dict
+            Pallete of colors
         """
         # Creates a theme pack directory
         if PU.WinFileValidator(Name) and not os.path.isdir(PU.PathJoin(Dest, Name)):
@@ -130,101 +172,92 @@ class Theme:
                 self.ThemeConfig[Name] = ThemePath
         else: return None
 
+        # Creates an app theme json
         if not os.path.isfile(PU.PathJoin(ThemePath, "theme.json")):
-            # Creates an app Stylesheet
             with open(PU.PathJoin(ThemePath, "theme.json"), "w") as FH:
                 json.dump(pallete, FH)
         else: return None
 
+        # Creates an app Stylesheet
         if not os.path.isfile(PU.PathJoin(ThemePath, "stylesheet.css")):
-            # Creates an app Stylesheet
             with open(PU.PathJoin(ThemePath, "stylesheet.css"), "w") as FH:
                 Stylesheet = self.GenStyleSheet(pallete)
                 FH.write(Stylesheet)
         else: return None
 
+        # Creates an Import
         if not os.path.isfile(PU.PathJoin(ThemePath, "__init__.py")):
-            # Creates an Import
             with open(PU.PathJoin(ThemePath, "__init__.py"), "w") as FH:
                 FH.write("from . import app_icons")
         else: return None
 
+        # Creates an app icons
         if not os.path.isfile(PU.PathJoin(ThemePath, "app_icons.qrc")):
-            # Creates an app icons
             with open(PU.PathJoin(ThemePath, "app_icons.qrc"), "w") as FH:
                 resource = self.GenAppIcons(pallete, ThemePath)
                 FH.write(resource)
-                # processes resource file for icons
-                IN = PU.PathJoin(ThemePath, "app_icons.qrc")
-                OUT = PU.PathJoin(ThemePath, "app_icons.py")
-                if self.CompileResource(IN, OUT):
-                    # cleanup
-                    PU.PurgeDirectory(PU.PathJoin(ThemePath, "png"))
-                    FH.close()
-                    PU.PurgeFile(PU.PathJoin(ThemePath, "app_icons.qrc"))
+            # processes resource file for icons
+            IN = PU.PathJoin(ThemePath, "app_icons.qrc")
+            OUT = PU.PathJoin(ThemePath, "app_icons.py")
+            if self.CompileResource(IN, OUT):
+                # cleanup
+                PU.PurgeDirectory(PU.PathJoin(ThemePath, "png"))
+                PU.PurgeFile(IN)
         else: return None
 
         self.ThemeConfig[f"APPTHEMES/{Name}"] = ThemePath
 
-    def GenStyleSheet(self, pallete, stylesheet = None): # Tested
+    def GenStyleSheet(self, pallete: dict, stylesheet: str = None): # Tested
         """
-        Info: Generates stylesheet using a UI colour pallete
-        Args:
-        pallete: Dict
-            -> Dict oft the color pallete
-        stylesheet: String
-            -> stylesheet to use
-        Returns: String
-        Errors: None
+        Generates stylesheet using a UI colour pallete
+
+        Parameters
+        ----------
+        pallete : dict
+            Dict of the color pallete
+        stylesheet : str, optional
+            stylesheet to use, by default None
+
+        Returns
+        -------
+        String
+            stylesheet Generated
         """
         if stylesheet == None:
-            with open(PU.PathJoin(os.path.split(self.ROOTPATH)[0], "mainwindow_apollo.css")) as style:
+            with open(PU.PathJoin(os.path.split(Theme.ROOTPATH)[0], "mainwindow_apollo.css")) as style:
                 stylesheet = style.read()
         for element, value in pallete.items():
             stylesheet = re.sub(f"[($)]{element}(?!-)", value, stylesheet)
         return stylesheet
 
-    def GenAppIcons(self, pallete, Dest): # Tested
+    def GenAppIcons(self, pallete: dict, Dest: str): # Tested
         """
-        Info: Generates the theme icons for the app using SVG
-        Args:
-        Pallete: Dict
-            -> Theme dict
-        Dest: String
-            -> Destination Path
-        Returns: String
-        Errors: None
+        Generates the theme icons for the app using SVG
+
+        Parameters
+        ----------
+        pallete : dict
+            Theme dict
+        Dest : str
+            Destination Path
+
+        Returns
+        -------
+        String
+            Returns the app.qrc resource file
         """
         # create the root directory named as "png"
         if not os.path.isdir(PU.PathJoin(Dest, "png")):
+            # Dest is <BaseDir//png>
             os.mkdir(PU.PathJoin(Dest, "png"))
             Dest = PU.PathJoin(Dest, "png")
-            # Dest is <BaseDir//png>
-        if not os.path.isdir(PU.PathJoin(Dest, "16")):
-            os.mkdir(PU.PathJoin(Dest, "16"))
-        if not os.path.isdir(PU.PathJoin(Dest, "24")):
-            os.mkdir(PU.PathJoin(Dest, "24"))
-        if not os.path.isdir(PU.PathJoin(Dest, "32")):
-            os.mkdir(PU.PathJoin(Dest, "32"))
-        if not os.path.isdir(PU.PathJoin(Dest, "48")):
-            os.mkdir(PU.PathJoin(Dest, "48"))
-        if not os.path.isdir(PU.PathJoin(Dest, "64")):
-            os.mkdir(PU.PathJoin(Dest, "64"))
 
-        # works for only for SVG files present in root directory
-        SVGS = os.listdir(PU.PathJoin(os.path.split(self.ROOTPATH)[0], "svg"))
+            # creates extra sub dirs for each image size
+            for size in [16, 24, 32, 48, 64]:
+                if not os.path.isdir(PU.PathJoin(Dest, f"{size}")):
+                    os.mkdir(PU.PathJoin(Dest, f"{size}"))
 
-        # Scans all the SVG file to generate theme images
-        for Image in SVGS:
-            # SVG image Abs Path
-            Image = PU.PathJoin(PU.PathJoin(os.path.split(self.ROOTPATH)[0], "svg"), Image)
-            for ThemeName in ["icon-01", "icon-02", "icon-03", "inverse-01", "disabled-02", "disabled-03"]:
-                Colour = QtGui.QColor(pallete.get(ThemeName))
-                self.ImageOverlay(Image, ThemeName, PU.PathJoin(Dest, "16"), Colour, 16)
-                self.ImageOverlay(Image, ThemeName, PU.PathJoin(Dest, "24"), Colour, 24)
-                self.ImageOverlay(Image, ThemeName, PU.PathJoin(Dest, "32"), Colour, 32)
-                self.ImageOverlay(Image, ThemeName, PU.PathJoin(Dest, "48"), Colour, 48)
-                self.ImageOverlay(Image, ThemeName, PU.PathJoin(Dest, "64"), Colour, 64)
+        self.GenPNG(pallete, Dest)
 
         ImgPath = []
         for Dir, SDir, files in os.walk(Dest):
@@ -232,7 +265,30 @@ class Theme:
 
         return self.GenIconResource(ImgPath)
 
-    def ImageOverlay(self, Image, Theme, Dest, Color, size = 64): # tested
+    def GenPNG(self, pallete:dict , Dest: str): # Tested
+        """
+        Generate an PNG using te SVG
+
+        Parameters
+        ----------
+        pallete : dict
+            Pallet of colors
+        Dest : str
+            Dest directory for all image
+        """
+        # works for only for SVG files present in root directory
+        SVGS = os.listdir(PU.PathJoin(os.path.split(Theme.ROOTPATH)[0], "svg"))
+
+        # Scans all the SVG file to generate theme images
+        for Image in SVGS:
+            # SVG image Abs Path
+            Image = PU.PathJoin(PU.PathJoin(os.path.split(Theme.ROOTPATH)[0], "svg"), Image)
+            for ThemeName in ["icon-01", "icon-02", "icon-03", "inverse-01", "disabled-02", "disabled-03"]:
+                Colour = QtGui.QColor(pallete.get(ThemeName))
+                for size in [16, 24, 32, 48, 64]:
+                   self.ImageOverlay(Image, ThemeName, PU.PathJoin(Dest, f"{size}"), Colour, size)
+
+    def ImageOverlay(self, Image: str, Theme: str, Dest: str, Color: QtGui.QColor, size: int = 64): # tested
         """
         Overlays and creates a PNG from an SVG
 
@@ -267,7 +323,7 @@ class Theme:
             Icon.save(path)
         return path
 
-    def GenIconResource(self, Files): # Tested
+    def GenIconResource(self, Files: list): # Tested
         """
         Generates a resource file for all icons
 
@@ -288,7 +344,23 @@ class Theme:
         String = "\n".join([HEADER, BODY, FOOTER])
         return String
 
-    def CompileResource(self, IN, OUT): # Tested
+    def CompileResource(self, IN: str, OUT: str): # Tested
+        """
+        Resource Compiler, Compiles all the images to a single file to immport on runtime
+
+        Parameters
+        ----------
+        IN : Str
+           IN file Path
+        OUT : Str
+           OUT file Path
+
+        Returns
+        -------
+        Boolean
+            if compiler ran successful
+
+        """
         from PySide6 import __path__ as PYS_path
 
         exe = [PU.PathJoin(PYS_path[0], "rcc.exe"), '-g', 'python', "-o", OUT, IN]
@@ -297,17 +369,52 @@ class Theme:
             if err: # pragma: no cover
                 msg = err.decode("utf-8")
                 command = ' '.join(exe)
-                raise Warning(f"Error: {msg}\nwhile executing '{command}'")
-
+                print(f"Error: {msg}\nwhile executing '{command}'")
+                return False
         return True
+
+    @staticmethod
+    def SetSheet(widget: QtWidgets.QWidget, sheet: str = ""):
+        """
+        Sets the Loaded Stylesheet for the Widget
+
+        Parameters
+        ----------
+        widget : QtWidgets.QWidget
+            QWidget to add stylesheet to
+        sheet : str, optional
+            Stylesheet, by default ""
+        """
+        if sheet == "":
+            sheet = Theme.STYLESHEET
+        widget.setStyleSheet(sheet)
+
+    @staticmethod
+    def getThemeNames():
+        """
+        Gets all the theme file present in the directory
+
+        Returns
+        -------
+        dict
+            dict of all the themes
+        """
+        themes = {}
+        for F in os.listdir(PU.PathJoin(PARENT_DIR, "plugins", "app_theme", "theme_packs")):
+            if F not in ['__init__.py', '__pycache__']:
+                themes[F] = (PU.PathJoin(PARENT_DIR, "plugins", "app_theme", "theme_packs", F))
+
+        return themes
 
     @classmethod
     def DefaultPallete(cls):
         """
-        Info: Default Color pallete
-        Args: None
-        Returns: Dict
-        Errors: None
+        Default colour pallete for apollo
+
+        Returns
+        -------
+        Dict
+            Color Pallete
         """
         JSON = {"ui-background" : "#161616",
                 "interactive-01" : "#0f62fe",
@@ -373,3 +480,9 @@ class Theme:
                 "disabled-03" : "#6f6f6f"
             }
         return JSON
+
+
+if __name__ == "__main__":
+    app = QtWidgets.QApplication([])
+    inst = Theme()
+    app.exec()

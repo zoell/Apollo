@@ -162,3 +162,5 @@ Thumbs.db
 
 # profiling data
 .prof
+.qt_for_python/uic/uic.exe
+.qt_for_python/rcc/app_icons.py

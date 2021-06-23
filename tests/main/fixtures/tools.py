@@ -70,7 +70,7 @@ def Gen_TableView_fromData(DataTable: dict):
     return TableView
 
 @pytest.fixture
-def Gen_DbTable_Data(rows = 1000):
+def Gen_DbTable_Data(rows = 20):
     # data insertion into library table
     DataTable = {}
     for fields in LibraryManager().db_fields:

@@ -1,14 +1,5 @@
-import sys
-import os
-import re
-import datetime
-import re
-import hashlib
-import json
-import time
-import pathlib
-
-sys.path.insert(0, r"D:\dev\Apollo-dev")
+import sys, os, re, datetime, re, hashlib, json, time, pathlib
+from typing import Callable
 
 import mutagen
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
@@ -16,7 +7,7 @@ from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Qt
 
 from apollo import exe_time, dedenter, ThreadIt, PathUtils
-# from apollo.mediafile import MediaFile
+from apollo.plugins.audio_player import MediaFile
 from apollo import PARENT_DIR
 
 
@@ -36,6 +27,32 @@ class QueryBuildFailed(Exception): __module__ = "LibraryManager"
 class QueryExecutionFailed(Exception): __module__ = "LibraryManager"
 
 
+class Connection:
+
+    def __init__(self, DBname):
+        super().__init__()
+        self.DB = self.connect(DBname)
+
+    def __enter__(self):
+        DB_Driver = QSqlDatabase.addDatabase("QSQLITE", "DEFAULT")
+        DB_Driver.setDatabaseName(self.DB)
+        if DB_Driver.open():
+            return DB_Driver
+        else:
+            raise ConnectionError(self.DB)
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        if any([exc_type, exc_value, exc_traceback]):
+            print(exc_type, exc_value, exc_traceback)
+        QSqlDatabase.removeDatabase("DEFAULT")
+
+    def connect(self, DB): #Tested
+        if ((DB == ":memory:") or PathUtils.isFileExt(DB, ".db")):
+            return DB
+        else:
+            raise ConnectionError()
+
+
 class DataBaseManager:
     """
     Base class for all th sql related function and queries
@@ -47,7 +64,7 @@ class DataBaseManager:
         """
         self.db_fields = DBFIELDS
 
-    def connect(self, db): #Tested
+    def connect(self, DB, Check = True): #Tested
         """
         Uses the Database Driver to create a connection with a local
         database.If Db not avaliable will create new Db
@@ -69,51 +86,13 @@ class DataBaseManager:
         ConnectionError
             if database fails to connect or fails checks
         """
-        if ((db == ":memory:") or PathUtils.isFileExt(db, ".db")):
-            self.db_driver = QSqlDatabase.addDatabase("QSQLITE")
-            self.db_driver.setDatabaseName(db)
-        else:
-            return False
-
-        self.DB_NAME = db
-        if self.db_driver.open() and self.IsConneted():
-            if self.db_driver.isOpenError():
-                raise ConnectionError()
+        self.DB_NAME = DB
+        if Check:
             if not self.StartUpChecks():
                 raise DBStructureError("Startup Checks Failed")
-            else:
-                return True
-
-        # only executes when connection fails and app closes
+            else: return True
+            # only executes when connection fails and app closes
         else: # pragma: no cover
-            raise ConnectionError()
-
-    def IsConneted(self): #Tested
-        """
-        Returns a value if DB is connected or not
-
-        Returns
-        -------
-        Boolean
-            boolean abased according to the state of the connection
-        """
-        return (self.db_driver.isOpen() and self.db_driver.isValid())
-
-    def close_connection(self): #Tested
-        """
-        Uses the Database Driver to commit and close a connection with a
-        local database
-
-        >>> library_manager.close_connection()
-
-        Returns
-        -------
-        boolean
-            closes connection and give true on success
-        """
-        self.db_driver.commit()
-        self.db_driver.close()
-        if not self.db_driver.isOpen():
             return True
 
     def StartUpChecks(self): # Tested
@@ -128,8 +107,7 @@ class DataBaseManager:
         """
 
         # checks for existance of library table
-        [[TABLE, COLUMNS]] = self.fetchAll(
-            self.ExeQuery("""
+        [[TABLE, COLUMNS]] = self.ExeQuery("""
             SELECT
             (
                 SELECT
@@ -156,13 +134,11 @@ class DataBaseManager:
                 FROM pragma_table_info('library')
             ) AS COLUMN_CHECK;
         """)
-        )
         if not bool(TABLE) or not bool(COLUMNS):
             self.Create_LibraryTable()
 
         # checks for existance of nowplaying view
-        [[TABLE, COLUMNS]] = self.fetchAll(
-            self.ExeQuery("""
+        [[TABLE, COLUMNS]] = self.ExeQuery("""
             SELECT
             (
                 SELECT
@@ -189,13 +165,12 @@ class DataBaseManager:
                 FROM pragma_table_info('nowplaying')
             ) AS COLUMN_CHECK
         """)
-        )
         if not bool(TABLE) or not bool(COLUMNS):
             self.Create_EmptyView("nowplaying")
 
         return True
 
-    def ExeQuery(self, Query): #Tested
+    def ExeQuery(self, Query, Column = None): #Tested
         """
         Executes an QSqlQuery and returns the query to get results
 
@@ -211,22 +186,29 @@ class DataBaseManager:
         QSqlQuery
             SQLQuery
         """
-        if isinstance(Query, str):
-            QueryStr = Query
-            Query = QSqlQuery()
-            if Query.prepare(QueryStr) == False:
-                raise QueryBuildFailed(QueryStr)
+        with Connection(self.DB_NAME) as CON:
+            if isinstance(Query, str):
+                QueryStr = Query
+                Query = QSqlQuery(db=CON)
+                if Query.prepare(QueryStr) == False:
+                    del CON
+                    raise QueryBuildFailed(QueryStr)
+            else:
+                del CON
+                raise Exception()
 
-        QueryExe = Query.exec()
-        if QueryExe == False :
-            msg = f"""
-                EXE: {QueryExe}
-                ERROR: {(Query.lastError().text())}
-                Query: {Query.lastQuery()}
-                """
-            raise QueryExecutionFailed(dedenter(msg, 12))
-        else:
-            return Query
+            QueryExe = Query.exec()
+            if QueryExe == False :
+                msg = f"""
+                    EXE: {QueryExe}
+                    ERROR: {(Query.lastError().text())}
+                    Query: {Query.lastQuery()}
+                    """
+                del CON
+                raise QueryExecutionFailed(dedenter(msg, 12))
+            else:
+                del CON
+                return self.fetchAll(Query, Column)
 
     def fetchAll(self, Query, Column = None): #Tested
         """
@@ -279,7 +261,7 @@ class DataBaseManager:
             if data retruival failed
         """
 
-        return self.fetchAll(self.ExeQuery(f"SELECT {Column} FROM {view_name}"),1)
+        return self.ExeQuery(f"SELECT {Column} FROM {view_name}",1)
 
     def SelectAll(self, name):
         """
@@ -300,7 +282,7 @@ class DataBaseManager:
         Exception
             if data retruival failed
         """
-        return self.fetchAll(self.ExeQuery(f"SELECT * FROM {name}"))
+        return self.ExeQuery(f"SELECT * FROM {name}")
 
     ####################################################################################################################
     # Create, Drop, Insert Type Functions
@@ -476,26 +458,28 @@ class DataBaseManager:
         metadata: Dict
             Distonary of all the combined metadata
         """
-        query = QSqlQuery()
-        columns =", ".join(metadata.keys())
-        placeholders =  ", ".join(["?" for i in range(len(metadata.keys()))])
-        query.prepare(f"""INSERT OR IGNORE INTO library ({columns}) VALUES ({placeholders})""")
-        for keys in metadata.keys():
-            query.addBindValue(metadata.get(keys))
+        with Connection(self.DB_NAME) as CON:
+            # sets up the transcation
+            CON.transaction()
+            QSqlQuery("PRAGMA journal_mode = MEMORY", db = CON)
 
-        # sets up the transcation
-        self.db_driver.transaction()
-        self.ExeQuery("PRAGMA journal_mode = MEMORY")
+            columns =", ".join(metadata.keys())
+            placeholders =  ", ".join(["?" for i in metadata.keys()])
+            query = QSqlQuery(f"INSERT OR IGNORE INTO library ({columns}) VALUES ({placeholders})", db=CON)
+            for keys in metadata.keys():
+                query.addBindValue(metadata.get(keys))
 
-        if not query.execBatch(): # pragma: no cover
-            msg = f"""
-                ERROR: {(query.lastError().text())}
-                Query: {query.lastQuery()}
-                """
-            raise QueryExecutionFailed(dedenter(msg, 12))
+            if not query.execBatch(): # pragma: no cover
+                msg = f"""
+                    ERROR: {(query.lastError().text())}
+                    Query: {query.lastQuery()}
+                    """
+                del CON
+                raise QueryExecutionFailed(dedenter(msg, 12))
 
-        self.ExeQuery("PRAGMA journal_mode = WAL")
-        self.db_driver.commit()
+            QSqlQuery("PRAGMA journal_mode = WAL", db = CON)
+            CON.commit()
+            del CON
 
     ###################################################################################################################
     # Table Stats Query
@@ -511,7 +495,7 @@ class DataBaseManager:
         tablename: String
             Name of the table or view to be queried
         """
-        query = self.fetchAll(self.ExeQuery(f"""
+        query = (self.ExeQuery(f"""
         SELECT IIF(OUTPUT, OUTPUT, 0) AS FINAL
         FROM (
             SELECT round(sum(filesize)/1024, 2) AS OUTPUT
@@ -530,7 +514,7 @@ class DataBaseManager:
         tablename: String
             Name of the table or view to be queried
         """
-        query = self.fetchAll(self.ExeQuery(f"""
+        query = (self.ExeQuery(f"""
         SELECT IIF(OUTPUT, OUTPUT, 0) AS FINAL
         FROM (
             SELECT sum(playcount) AS OUTPUT
@@ -550,7 +534,7 @@ class DataBaseManager:
         tablename: String
             Name of the table or view to be queried
         """
-        query = self.fetchAll(self.ExeQuery(f"""
+        query = (self.ExeQuery(f"""
         SELECT IIF(TIME_SEC, TIME_SEC, 0) AS FINAL
         FROM (
             SELECT (sum(substr(length,1,1))*360 + sum(substr(length,3,2))*60 + sum(substr(length,6,2)))
@@ -571,7 +555,7 @@ class DataBaseManager:
         tablename: String
             Name of the table or view to be queried
         """
-        query = self.fetchAll(self.ExeQuery(f"""
+        query = (self.ExeQuery(f"""
         SELECT IIF(OUTPUT, OUTPUT, 0) AS FINAL
         FROM (
             SELECT count(DISTINCT album) AS OUTPUT
@@ -591,7 +575,7 @@ class DataBaseManager:
         tablename: String
             Name of the table or view to be queried
         """
-        query = self.fetchAll(self.ExeQuery(f"""
+        query = (self.ExeQuery(f"""
         SELECT IIF(OUTPUT, OUTPUT, 0) AS FINAL
         FROM (
             SELECT count(DISTINCT artist) AS OUTPUT
@@ -611,7 +595,7 @@ class DataBaseManager:
         tablename: String
             Name of the table or view to be queried
         """
-        query = self.fetchAll(self.ExeQuery(f"""
+        query = (self.ExeQuery(f"""
         SELECT IIF(OUTPUT, OUTPUT, 0) AS FINAL
         FROM (
             SELECT count(DISTINCT file_id) AS OUTPUT
@@ -630,7 +614,7 @@ class DataBaseManager:
         tablename: String
             Name of the table or view to be queried
         """
-        query = self.fetchAll(self.ExeQuery(f"""
+        query = (self.ExeQuery(f"""
         SELECT album
         FROM {Tablename}
         WHERE album NOTNULL AND album NOT IN ('', ' ')
@@ -653,7 +637,7 @@ class DataBaseManager:
         tablename: String
             Name of the table or view to be queried
         """
-        query = self.fetchAll(self.ExeQuery(f"""
+        query = (self.ExeQuery(f"""
         SELECT genre
         FROM {Tablename}
         WHERE genre NOTNULL AND genre NOT IN ('', ' ')
@@ -676,7 +660,7 @@ class DataBaseManager:
         tablename: String
             Name of the table or view to be queried
         """
-        query = self.fetchAll(self.ExeQuery(f"""
+        query = (self.ExeQuery(f"""
         SELECT artist
         FROM {Tablename}
         WHERE artist NOTNULL AND artist NOT IN ('', ' ')
@@ -699,7 +683,7 @@ class DataBaseManager:
         tablename: String
             Name of the table or view to be queried
         """
-        query = self.fetchAll(self.ExeQuery(f"""
+        query = (self.ExeQuery(f"""
         SELECT title
         FROM {Tablename}
         WHERE playcount == (
@@ -727,62 +711,96 @@ class FileManager(DataBaseManager): # pragma: no cover
     -> m4a
     """
     def __init__(self):
-        """Constructor"""
+        """
+        Class Constructor
+        """
         self.db_fields = DBFIELDS
 
-    def TransposeMeatadata(self, Metadata):
-        T_metadata = dict.fromkeys(DBFIELDS, "")
+    def TransposeMeatadata(self, Metadata: list):
+        """
+        Transposes the List given to it
+
+        Parameters
+        ----------
+        Metadata : list
+            List of all the Files Metadata
+
+        Returns
+        -------
+        Dict
+            A dict of values corresponding to the columns
+        """
+        T_metadata = dict.fromkeys(DBFIELDS, [])
         for index, key in enumerate(T_metadata.keys()):
             T_metadata[key] = [value[index] for value in Metadata]
         return T_metadata
 
-    def ScanDirectory(self, Dir, include = [], Slot = lambda: ''):
+    @exe_time
+    def ScanDirectory(self, Dir: str, include: list = [], Slot: Callable = lambda x: ''):
+        """
+        Scans all the files in a directory and inserts them to the DB
+
+        Parameters
+        ----------
+        Dir : str
+            dir to scan
+        include : list, optional
+            File Extensions to look for, by default []
+        Slot : Callable, optional
+            Additional Callback with (arg: str) prameter, by default lambda:''
+        """
         BatchMetadata = []
         FileHashList = []
-        file_paths = {}
-        for D, SD, F in os.walk(os.path.normpath(Dir)):
-            for file in F:
-                if os.path.splitext(file)[1] in include:
-                    file = os.path.normpath(os.path.join(D, file))
-                    file_paths[(hashlib.md5(file.encode())).hexdigest()] = file
 
         Slot(f"Scanning {Dir}")
-        ID = ", ".join([f"'{v}'" for v in set(file_paths.keys())])
-        query = QSqlQuery(f"SELECT path_id FROM library WHERE path_id IN ({ID})")
-        query.exec_()
-        while query.next():
-            del file_paths[query.value(0)]
+        Existing_Paths = self.ExeQuery(f"SELECT path_id FROM library")
+        FileHashList = self.ExeQuery(f"SELECT file_id FROM library")
+        for D, SD, F in os.walk(os.path.normpath(Dir)):
+            for file in F:
+                # checks for file ext
+                if (os.path.splitext(file)[1]).upper().replace(".", "") in include:
+                    file = PathUtils.PathJoin(D, file)
 
-        self.FileChecker(file_paths, FileHashList, BatchMetadata)
+                    # Generates Hashes
+                    path_hash = (hashlib.md5(file.encode())).hexdigest()
+                    Filehash = self.FileHasher(file)
+
+                    # checks and add teh files to metadata dict
+                    if ([path_hash] not in Existing_Paths) and ([Filehash] not in FileHashList):
+                        FileHashList.append(Filehash)
+                        Metadata = MediaFile(file).getMetadata()
+                        Metadata["path_id"] = path_hash
+                        Metadata["file_id"] = Filehash
+                        BatchMetadata.append(list(Metadata.values()))
+                
+                #     else:
+                #         Slot(f"SKIPPED: {file}")
+                # else:
+                #     Slot(f"SKIPPED: {file}")
+
         self.BatchInsert_Metadata(self.TransposeMeatadata(BatchMetadata))
         Slot(f"Completed Scanning {Dir}")
 
-    def FileChecker(self, filepath, FileHashList, BatchMetadata):
-        QSqlQuery("BEGIN TRANSCATION").exec_()
-        for ID, file in filepath.items():
-            Filehash = self.FileHasher(file)
-            if (Filehash not in FileHashList):
-                FileHashList.append(Filehash)
-                Metadata = MediaFile(file).getMetadata()
-                Metadata["path_id"] = ID
-                Metadata["file_id"] = Filehash
-                BatchMetadata.append(list(Metadata.values()))
-
-    def FileHasher(self, file, hashfun = hashlib.md5):
+    def FileHasher(self, file: str, hashfun: Callable = hashlib.md5):
         """
         Creates a hash id for the file path passed and returns hash id.
         Hash id is calculated with the 1024 bytes of the file.
 
-        :Args:
-            file: String
-                File for which the hash is generated
-            hashfun: Method
-                Hashing algorithm method from hashlib
+        Parameters
+        ----------
+        file : str
+            File for which the hash is generated
+        hashfun : Callable, optional
+            Hashing algorithm method from hashlib, by default hashlib.md5
+
+        Returns
+        -------
+        str
+            hashval that is generated
         """
         with open(file, "rb") as fobj:
-            bytes_ = fobj.read(1024)
-            hashval = (hashfun(bytes_)).hexdigest()
-        return hashval
+            return (hashfun(fobj.read(1024))).hexdigest()
+
 
 
 class LibraryManager(FileManager):
@@ -802,9 +820,6 @@ class LibraryManager(FileManager):
             if not self.connect(DBname):# pragma: coverage
                 raise DBStructureError("Startup Checks Failed")
 
-
-if __name__ == "__main__": # pragma: no cover
-    inst = DataBaseManager()
-    inst.connect(".\\default.db")
-    print(inst.IsConneted(), inst.IsConneted())
-    inst.close_connection()
+if __name__ == "__main__":
+    inst = LibraryManager(r"D:\dev\Apollo-dev\apollo\db\default.db")
+    inst.ScanDirectory(r"D:\music", ["MP3", "FLAC"])

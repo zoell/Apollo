@@ -3,8 +3,6 @@ import pathvalidate
 import shutil
 import json
 import time
-import json
-import os
 import threading
 
 from apollo import PARENT_DIR
@@ -447,9 +445,8 @@ class ConfigManager:
     >>> inst.Getvariable("ROOT/SUB/SUB1")
     >>> inst.Setvariable(["VALUE"], "ROOT/SUB/SUB1")
     """
-    def __init__(self):
-        self.file = os.path.join(PARENT_DIR,"config.cfg")
-        self.config_dict = self.openConfig(self.file)
+    def __init__(self, config_dict = None):
+        self.config_dict = config_dict
 
     def deafult_settings(self):
         """
@@ -476,7 +473,7 @@ class ConfigManager:
         }
         return config
 
-    def openConfig(self, file = None):
+    def LoadConfig(self, file):
         """
         Opens the config file and loads the settings JSON
 
@@ -490,10 +487,7 @@ class ConfigManager:
         dict
             reads a JSON and returns the config
         """
-
-        if file == None:
-            file = self.file
-
+        self.file = file
         self.config_dict = {}
         if not os.path.isfile(file):
             with open(file, "w") as FP:
@@ -507,9 +501,9 @@ class ConfigManager:
                 print(e)
                 with open(file, "w") as FP:
                     json.dump({}, FP, indent = 4)
-        return self.config_dict
+        return self
 
-    def writeConfig(self, file = None):
+    def DumpConfig(self):
         """
         Writes Data to the Config File
 
@@ -523,10 +517,9 @@ class ConfigManager:
         Boolean
             returns if the write was succesful
         """
-        if file == None:
-            file = self.file
-
-        with open(file, "w") as FP:
+        if self.file == None:
+            return False
+        with open(self.file, "w") as FP:
             json.dump(self.config_dict, FP, indent = 4)
             return True
 
@@ -550,11 +543,12 @@ class ConfigManager:
             config = self.config_dict
 
         if isinstance(path, str):
+            if path.find(r"//") != -1: raise IndexError(path)
             path = path.split("/")
 
         if len(path) >= 1 and not("" in path):
             index = path.pop(0)
-            data =config.get(index, False)
+            data = config.get(index, False)
 
             if isinstance(data, dict):
                 return self.Getvalue(path, data)
@@ -586,38 +580,66 @@ class ConfigManager:
             config = self.config_dict
 
         if isinstance(path, str):
+            if path.find(r"//") != -1: raise IndexError(path)
             path = path.split("/")
 
         if len(path) >= 1 and not("" in path):
             index = path.pop(0)
-            data = config.get(index, False)
+            if index in config.keys():
+                data = config.get(index, False)
 
-            if index not in config.keys():
-                config[index] = value
-                return None
+                if isinstance(data, dict):
+                    if len(path) == 0:
+                        config[index] = value
+                    else:
+                        return self.Setvalue(value, path, data)
 
-            if isinstance(data, dict):
-                return self.Setvalue(value, path, data)
+                if isinstance(data, str):
+                    config[index] = value
 
-            if isinstance(data, str):
-                config[index] = value
-
-            if isinstance(data, list) and not isinstance(value, str):
-                config[index].append(value)
+                if isinstance(data, list) and isinstance(value, list):
+                    config[index].extend(value)
+                elif isinstance(data, list) and not isinstance(value, list):
+                    config[index].append(value)
+                else:
+                    config[index] = value
             else:
                 config[index] = value
-
         else:
             return None
+
+    def DropKey(self, path = '', config = None):
+        if config == None:
+            config = self.config_dict
+
+        if isinstance(path, str):
+            path = path.split("/")
+
+        if len(path) >= 1 and not("" in path):
+            index = path.pop(0)
+            if index in config.keys() and len(path) == 0:
+                del config[index]
+                return None
+            else:
+                data = config.get(index, False)
+                return self.DropKey(path, data)
 
 
 class AppConfig(dict):
 
-    def __init__(self):
+    def __init__(self, Config = "DEFAULT"):
         """
         Manages all the app config loading and writing config manager that manages the config.cfg file
         """
         self.Manager = ConfigManager()
+        if Config == "DEFAULT":
+            self.Manager.file = (os.path.join(PARENT_DIR,"config.cfg"))
+            self.Manager.LoadConfig(os.path.join(PARENT_DIR,"config.cfg"))
+        if isinstance(Config, dict):
+            self.Manager.config_dict = Config
+            self.Manager.file = None
+        if isinstance(Config, str) and Config != "DEFAULT":
+            self.Manager.LoadConfig(Config)
 
     def __repr__(self):
         return json.dumps(self.Manager.config_dict, indent = 2)
@@ -625,33 +647,7 @@ class AppConfig(dict):
     def __str__(self):
         return json.dumps(self.Manager.config_dict, indent = 2)
 
-    def __getitem__(self, k):
-        """
-        Gets the item at index
-
-        Parameters
-        ----------
-        k : any
-            key to look for
-        """
-        return self.get(k)
-
-    def __setitem__(self, key, value):
-        """
-        Gets the item at index
-
-        Parameters
-        ----------
-        key : any
-            key to look for
-        """
-        if key == "current_db_path":
-            self.current_db_path = value
-        else:
-            self.Manager.Setvalue([value], key)
-        self.Manager.writeConfig()
-
-    def get(self, key):
+    def __getitem__(self, key):
         """
         Gets the item at index
 
@@ -665,6 +661,25 @@ class AppConfig(dict):
         else:
             return self.Manager.Getvalue(key)
 
+    def __delitem__(self, v) -> None:
+        self.Manager.DropKey(v)
+        self.Manager.DumpConfig()
+
+    def __setitem__(self, key, value):
+        """
+        Gets the item at index
+
+        Parameters
+        ----------
+        key : any
+            key to look for
+        """
+        if key == "current_db_path":
+            self.current_db_path = value
+        else:
+            self.Manager.Setvalue(value, key)
+        self.Manager.DumpConfig()
+
     # current_db_path #########################################################
     @property
     def current_db_path(self):
@@ -675,10 +690,3 @@ class AppConfig(dict):
     def current_db_path(self, value):
         name = self.Manager.Getvalue("CURRENT_DB")
         self.Manager.Setvalue([value], f"MONITERED_DB/{name}/db_loc")
-
-
-if __name__ == "__main__":
-    inst = AppConfig()
-    print(inst.get("current_db_path"))
-    inst[f"APPTHEMES/GRAY_100"] = 111111111
-
