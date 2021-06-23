@@ -16,17 +16,17 @@ from PySide6.QtWidgets import *
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
-            MainWindow.setObjectName(u"MainWindow")
+            MainWindow.setObjectName(u"FileExp_MainWindow")
         MainWindow.resize(500, 400)
         MainWindow.setMinimumSize(QSize(500, 400))
         self.centralwidget = QWidget(MainWindow)
-        self.centralwidget.setObjectName(u"centralwidget")
+        self.centralwidget.setObjectName(u"FileExp_centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
         self.gridLayout.setSpacing(4)
-        self.gridLayout.setObjectName(u"gridLayout")
+        self.gridLayout.setObjectName(u"FileExp_gridLayout")
         self.gridLayout.setContentsMargins(4, 4, 4, 4)
         self.label = QLabel(self.centralwidget)
-        self.label.setObjectName(u"label")
+        self.label.setObjectName(u"FileExp_label")
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(1)
         sizePolicy.setVerticalStretch(0)
@@ -36,13 +36,13 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.label, 1, 0, 1, 1)
 
         self.buttonBox = QDialogButtonBox(self.centralwidget)
-        self.buttonBox.setObjectName(u"buttonBox")
+        self.buttonBox.setObjectName(u"FileExp_buttonBox")
         self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel|QDialogButtonBox.Ok)
 
         self.gridLayout.addWidget(self.buttonBox, 1, 1, 1, 1, Qt.AlignBottom)
 
         self.treeView = QTreeView(self.centralwidget)
-        self.treeView.setObjectName(u"treeView")
+        self.treeView.setObjectName(u"FileExp_treeView")
 
         self.gridLayout.addWidget(self.treeView, 0, 0, 1, 2)
 
@@ -54,7 +54,7 @@ class Ui_MainWindow(object):
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"File Explorer", None))
-        self.label.setText(QCoreApplication.translate("MainWindow", u"TextLabel", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("FileExp_MainWindow", u"File Explorer", None))
+        self.label.setText(QCoreApplication.translate("FileExp_MainWindow", u"TextLabel", None))
     # retranslateUi
 

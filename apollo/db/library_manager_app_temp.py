@@ -11,33 +11,42 @@ from apollo.gui.ui_LEDT_dialog import LEDT_Dialog
 
 
 
-TEMPCONFIG = {
-    "Default": {
-        "name": "Default",
-        "path": "C:\\Users\\Ommar\\Desktop\\temp\\default.db",
-        "files_monitored": ['D:/Apollo', 'D:/Blender2.92', 'D:/Blockchain-project', 'D:/Program Files',
-                            'D:/Temp', 'D:/blender-addons', 'D:/books', 'D:/class-notes', 'D:/games',
-                            'D:/msys2', 'D:/music', 'D:/python-venv'],
-        "file_extensions": [1, 0, 1, 1, 0, 1, 1],
+"""
+{
+    "APPTHEMES": {
+        "GRAY_100": "D:\\dev\\Apollo-dev\\apollo\\plugins\\app_theme\\theme_packs\\GRAY_100"
     },
-    "Default_2": {
-        "name": "Default_2",
-        "path": "C:\\Users\\Ommar\\Desktop\\temp\\default.db",
-        "files_monitored": ['D:/Apollo', 'D:/Blender2.92', 'D:/Blockchain-project', 'D:/Program Files',
-                            'D:/Temp', 'D:/blender-addons', 'D:/books', 'D:/class-notes', 'D:/games',
-                            'D:/msys2', 'D:/music', 'D:/python-venv'],
-        "file_extensions": [1, 2, 3, 4, 5, 6, 7],
-    },
-    "Default_3": {
-        "name": "Default_3",
-        "path": "C:\\Users\\Ommar\\Desktop\\temp\\default.db",
-        "files_monitored": ['D:/Apollo', 'D:/Blender2.92', 'D:/Blockchain-project', 'D:/Program Files',
-                            'D:/Temp', 'D:/blender-addons', 'D:/books', 'D:/class-notes', 'D:/games',
-                            'D:/msys2', 'D:/music', 'D:/python-venv'],
-        "file_extensions": [1, 2, 3, 4, 5, 6, 7],
+    "LIBRARY_GROUPORDER": "file_path",
+    "ACTIVETHEME": "GRAY_100",
+    "CURRENT_DB": "Default",
+    "MONITERED_DB": {
+        "Default": {
+            "name": "Default",
+            "db_loc": "D:\\dev\\Apollo-dev\\apollo\\db\\default.db",
+            "file_mon": ["D:\\Apollo", "D:\\Blender2.92", "D:\\Blockchain-project", "D:\\Program Files",
+                        "D:\\Temp", "D:\\blender-addons", "D:\\books", "D:\\class-notes", "D:\\games",
+                        "D:\\msys2", "D:\\music", "D:\\python-venv"],
+            "filters": [1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1]
+        },
+        "Default_2": {
+            "name": "Default_2",
+            "db_loc": "D:\\dev\\Apollo-dev\\apollo\\db\\default_2.db",
+            "file_mon": ["D:\\Apollo", "D:\\Blender2.92", "D:\\Blockchain-project", "D:\\Program Files",
+                        "D:\\Temp", "D:\\blender-addons", "D:\\books", "D:\\class-notes", "D:\\games",
+                        "D:\\msys2", "D:\\music", "D:\\python-venv"],
+            "filters": [1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1]
+        },
+        "Default_3": {
+            "name": "Default_3",
+            "db_loc": "D:\\dev\\Apollo-dev\\apollo\\db\\default_3.db",
+            "file_mon": ["D:\\Apollo", "D:\\Blender2.92", "D:\\Blockchain-project", "D:\\Program Files",
+                        "D:\\Temp", "D:\\blender-addons", "D:\\books", "D:\\class-notes", "D:\\games",
+                        "D:\\msys2", "D:\\music", "D:\\python-venv"],
+            "filters": [1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1]
+        }
     }
 }
-CURRENTDB = "Default"
+"""
 
 class FileScanner_Thread(QThread): # untested
     """

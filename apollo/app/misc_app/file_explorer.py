@@ -1,6 +1,7 @@
 from PySide6 import QtCore, QtWidgets, QtGui
 
 from apollo.gui.ui_file_exp_ui import Ui_MainWindow
+from apollo import PathUtils as PU
 
 import os
 
@@ -16,9 +17,9 @@ class CheckableFileSystemModel(QtWidgets.QFileSystemModel): # Untested
         """
         super().__init__()
         self.checkStates = {}
-        self.rowsInserted.connect(self.checkAdded)
-        self.rowsRemoved.connect(self.checkParent)
-        self.rowsAboutToBeRemoved.connect(self.checkRemoved)
+        self.rowsInserted.connect(self.checkAdded) #type: ignore
+        self.rowsRemoved.connect(self.checkParent) #type: ignore
+        self.rowsAboutToBeRemoved.connect(self.checkRemoved) #type: ignore
 
     def checkState(self, index):
         """
@@ -131,7 +132,7 @@ class CheckableFileSystemModel(QtWidgets.QFileSystemModel): # Untested
             return self.checkState(index)
         return super().data(index, role)
 
-    def setData(self, index, value, role, checkParent=True, emitStateChange=True):
+    def setData(self, index: QtCore.QModelIndex, value, role, checkParent=True, emitStateChange=True):
         """
         set the data for the children, but do not emit the state change,
         and don't check the parent state (to avoid recursion)
@@ -151,8 +152,8 @@ class CheckableFileSystemModel(QtWidgets.QFileSystemModel): # Untested
         if role == QtCore.Qt.CheckStateRole and index.column() == 0:
             self.setCheckState(index, value, emitStateChange)
             for row in range(self.rowCount(index)):
-                self.setData(index.child(row, 0), value, QtCore.Qt.CheckStateRole,
-                             checkParent=False, emitStateChange=False)
+                self.setData(self.index(row, 0, index), value, QtCore.Qt.CheckStateRole,
+                            checkParent=False, emitStateChange=False)
             self.dataChanged.emit(index, index)
             if checkParent:
                 self.checkParent(index.parent())
@@ -221,18 +222,23 @@ class FileExplorer(Ui_MainWindow, QtWidgets.QMainWindow): # Untested
         SelectedPaths.sort()
 
         for Item in SelectedPaths:
-            if os.path.ismount(Item):
-                Item = Item.replace("/", "")
-                subdirs = os.listdir(f"{Item}/")
-            else:
-                subdirs = os.listdir(Item)
-
-            for subdir in subdirs:
-                try:
-                    SelectedPaths.pop(SelectedPaths.index('/'.join([Item, subdir])))
-                except ValueError:
-                    pass
-
+            # handles error for secured system files
+            try:
+                # filters out mount related issues
+                if os.path.ismount(Item):
+                    subdirs = os.listdir(Item)
+                    Item = Item.replace("/", "")
+                else:
+                    subdirs = os.listdir(Item)
+                # compress the directory tree if all the file in the parent are selected
+                for subdir in subdirs:
+                    if ("/".join([Item, subdir])) in SelectedPaths:
+                        SelectedPaths.pop(SelectedPaths.index("/".join([Item, subdir])))
+            # deals with persission error and removes those files
+            except PermissionError:
+                if len(SelectedPaths) > 0:
+                    SelectedPaths.pop(SelectedPaths.index(Item))
+                continue
         return SelectedPaths
 
     def get_Path(self, index):

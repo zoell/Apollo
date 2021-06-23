@@ -1,14 +1,5 @@
-import sys
-import os
-import re
-import datetime
-import re
-import hashlib
-import json
-import time
-import pathlib
-
-sys.path.insert(0, r"D:\dev\Apollo-dev")
+import sys, os, re, datetime, re, hashlib, json, time, pathlib
+from typing import Callable
 
 import mutagen
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
@@ -16,7 +7,7 @@ from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Qt
 
 from apollo import exe_time, dedenter, ThreadIt, PathUtils
-# from apollo.mediafile import MediaFile
+from apollo.plugins.audio_player import MediaFile
 from apollo import PARENT_DIR
 
 
@@ -48,7 +39,7 @@ class Connection:
         if DB_Driver.open():
             return DB_Driver
         else:
-            raise ConnectionError()
+            raise ConnectionError(self.DB)
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         if any([exc_type, exc_value, exc_traceback]):
@@ -61,6 +52,7 @@ class Connection:
         else:
             raise ConnectionError()
 
+
 class DataBaseManager:
     """
     Base class for all th sql related function and queries
@@ -72,7 +64,7 @@ class DataBaseManager:
         """
         self.db_fields = DBFIELDS
 
-    def connect(self, DB): #Tested
+    def connect(self, DB, Check = True): #Tested
         """
         Uses the Database Driver to create a connection with a local
         database.If Db not avaliable will create new Db
@@ -95,9 +87,11 @@ class DataBaseManager:
             if database fails to connect or fails checks
         """
         self.DB_NAME = DB
-        if not self.StartUpChecks():
-            raise DBStructureError("Startup Checks Failed")
-        # only executes when connection fails and app closes
+        if Check:
+            if not self.StartUpChecks():
+                raise DBStructureError("Startup Checks Failed")
+            else: return True
+            # only executes when connection fails and app closes
         else: # pragma: no cover
             return True
 
@@ -193,7 +187,6 @@ class DataBaseManager:
             SQLQuery
         """
         with Connection(self.DB_NAME) as CON:
-            print(CON)
             if isinstance(Query, str):
                 QueryStr = Query
                 Query = QSqlQuery(db=CON)
@@ -718,62 +711,96 @@ class FileManager(DataBaseManager): # pragma: no cover
     -> m4a
     """
     def __init__(self):
-        """Constructor"""
+        """
+        Class Constructor
+        """
         self.db_fields = DBFIELDS
 
-    def TransposeMeatadata(self, Metadata):
-        T_metadata = dict.fromkeys(DBFIELDS, "")
+    def TransposeMeatadata(self, Metadata: list):
+        """
+        Transposes the List given to it
+
+        Parameters
+        ----------
+        Metadata : list
+            List of all the Files Metadata
+
+        Returns
+        -------
+        Dict
+            A dict of values corresponding to the columns
+        """
+        T_metadata = dict.fromkeys(DBFIELDS, [])
         for index, key in enumerate(T_metadata.keys()):
             T_metadata[key] = [value[index] for value in Metadata]
         return T_metadata
 
-    def ScanDirectory(self, Dir, include = [], Slot = lambda: ''):
+    @exe_time
+    def ScanDirectory(self, Dir: str, include: list = [], Slot: Callable = lambda x: ''):
+        """
+        Scans all the files in a directory and inserts them to the DB
+
+        Parameters
+        ----------
+        Dir : str
+            dir to scan
+        include : list, optional
+            File Extensions to look for, by default []
+        Slot : Callable, optional
+            Additional Callback with (arg: str) prameter, by default lambda:''
+        """
         BatchMetadata = []
         FileHashList = []
-        file_paths = {}
-        for D, SD, F in os.walk(os.path.normpath(Dir)):
-            for file in F:
-                if os.path.splitext(file)[1] in include:
-                    file = os.path.normpath(os.path.join(D, file))
-                    file_paths[(hashlib.md5(file.encode())).hexdigest()] = file
 
         Slot(f"Scanning {Dir}")
-        ID = ", ".join([f"'{v}'" for v in set(file_paths.keys())])
-        query = QSqlQuery(f"SELECT path_id FROM library WHERE path_id IN ({ID})")
-        query.exec_()
-        while query.next():
-            del file_paths[query.value(0)]
+        Existing_Paths = self.ExeQuery(f"SELECT path_id FROM library")
+        FileHashList = self.ExeQuery(f"SELECT file_id FROM library")
+        for D, SD, F in os.walk(os.path.normpath(Dir)):
+            for file in F:
+                # checks for file ext
+                if (os.path.splitext(file)[1]).upper().replace(".", "") in include:
+                    file = PathUtils.PathJoin(D, file)
 
-        self.FileChecker(file_paths, FileHashList, BatchMetadata)
+                    # Generates Hashes
+                    path_hash = (hashlib.md5(file.encode())).hexdigest()
+                    Filehash = self.FileHasher(file)
+
+                    # checks and add teh files to metadata dict
+                    if ([path_hash] not in Existing_Paths) and ([Filehash] not in FileHashList):
+                        FileHashList.append(Filehash)
+                        Metadata = MediaFile(file).getMetadata()
+                        Metadata["path_id"] = path_hash
+                        Metadata["file_id"] = Filehash
+                        BatchMetadata.append(list(Metadata.values()))
+                
+                #     else:
+                #         Slot(f"SKIPPED: {file}")
+                # else:
+                #     Slot(f"SKIPPED: {file}")
+
         self.BatchInsert_Metadata(self.TransposeMeatadata(BatchMetadata))
         Slot(f"Completed Scanning {Dir}")
 
-    def FileChecker(self, filepath, FileHashList, BatchMetadata):
-        QSqlQuery("BEGIN TRANSCATION").exec_()
-        for ID, file in filepath.items():
-            Filehash = self.FileHasher(file)
-            if (Filehash not in FileHashList):
-                FileHashList.append(Filehash)
-                Metadata = MediaFile(file).getMetadata()
-                Metadata["path_id"] = ID
-                Metadata["file_id"] = Filehash
-                BatchMetadata.append(list(Metadata.values()))
-
-    def FileHasher(self, file, hashfun = hashlib.md5):
+    def FileHasher(self, file: str, hashfun: Callable = hashlib.md5):
         """
         Creates a hash id for the file path passed and returns hash id.
         Hash id is calculated with the 1024 bytes of the file.
 
-        :Args:
-            file: String
-                File for which the hash is generated
-            hashfun: Method
-                Hashing algorithm method from hashlib
+        Parameters
+        ----------
+        file : str
+            File for which the hash is generated
+        hashfun : Callable, optional
+            Hashing algorithm method from hashlib, by default hashlib.md5
+
+        Returns
+        -------
+        str
+            hashval that is generated
         """
         with open(file, "rb") as fobj:
-            bytes_ = fobj.read(1024)
-            hashval = (hashfun(bytes_)).hexdigest()
-        return hashval
+            return (hashfun(fobj.read(1024))).hexdigest()
+
 
 
 class LibraryManager(FileManager):
@@ -793,23 +820,6 @@ class LibraryManager(FileManager):
             if not self.connect(DBname):# pragma: coverage
                 raise DBStructureError("Startup Checks Failed")
 
-
-if __name__ == "__main__": # pragma: no cover
-    with Connection(".\\default.db") as CON:
-        del CON
-
-    with Connection(".\\default.db") as CON:
-        del CON
-
-    with Connection(".\\default.db") as CON:
-        del CON
-
-    with Connection(".\\default.db") as CON:
-        del CON
-
-    with Connection(".\\default.db") as CON:
-        del CON
-
-    with Connection(".\\default.db") as CON:
-        del CON
-
+if __name__ == "__main__":
+    inst = LibraryManager(r"D:\dev\Apollo-dev\apollo\db\default.db")
+    inst.ScanDirectory(r"D:\music", ["MP3", "FLAC"])
