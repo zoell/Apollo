@@ -15,14 +15,14 @@ class NowPlayingQueue(SQLTableModel):
     Returns: None
     Errors: None
     """
-    def __init__(self):
+    def __init__(self, Driver):
         """
         Info: Constructor
         Args: None
         Returns: None
         Errors: None
         """
-        super().__init__()
+        super().__init__(Driver)
         self.PlayingQueue = PlayingQueue()
 
     def Get_columnData(self, Column):
@@ -296,7 +296,7 @@ class NowPlayingTab:
         self.Init_DataModels()
 
     def Init_DataModels(self):
-        self.MainModel = NowPlayingQueue()
+        self.MainModel = NowPlayingQueue(self.UI.DBManager)
         self.MainModel.LoadTable("nowplaying", self.MainModel.DB_FIELDS)
         self.DataProvider.AddModel(self.MainModel, "nowplaying_model")
         self.UI.NPQ_LSV_mainqueue.setModel(self.MainModel)

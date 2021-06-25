@@ -2222,6 +2222,7 @@
         color: $text-01;
 
     }
+
     QWidget#FileExp_centralwidget {
         background-color: $ui-background;
         color: $text-01;
@@ -2262,6 +2263,51 @@
 
     QWidget#FileExp_buttonBox QPushButton:checked,
     QWidget#FileExp_buttonBox QPushButton:pressed{
+        background-color: $active-ui;
+        color: $hover-primary-text;
+        border: 1px solid Transparent;
+        padding: 8px;
+    }
+
+/* LEDT_Dialog Sub App */
+    QWidget#LEDT_Dialog_centralwidget {
+        background-color: $ui-background;
+    }
+
+    QLineEdit#LEDT_Dialog_lineEdit {
+        background-color: $ui-01;
+        border: 1px solid $ui-02;
+        border-radius: 4px;
+        color: $text-02;
+        min-height: 24px;
+        margin: 8px;
+    }
+
+    QWidget#LEDT_Dialog_buttonBox QPushButton{
+        background-color: Transparent;
+        color: $link-01;
+        border: 1px solid $ui-01;
+        padding: 8px;
+        min-width: 64px;
+        border-radius: 4px;
+    }
+
+    QWidget#LEDT_Dialog_buttonBox QPushButton:disabled{
+        background-color: $disabled-02;
+        color: $disabled-03;
+        border: 1px solid Transparent;
+        padding: 8px;
+    }
+
+    QWidget#LEDT_Dialog_buttonBox QPushButton:hover{
+        background-color: $hover-ui;
+        color: $hover-primary-text;
+        border: 1px solid Transparent;
+        padding: 8px;
+    }
+
+    QWidget#LEDT_Dialog_buttonBox QPushButton:checked,
+    QWidget#LEDT_Dialog_buttonBox QPushButton:pressed{
         background-color: $active-ui;
         color: $hover-primary-text;
         border: 1px solid Transparent;

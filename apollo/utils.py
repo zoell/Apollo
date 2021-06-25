@@ -448,9 +448,10 @@ class ConfigManager:
     def __init__(self, config_dict = None):
         self.config_dict = config_dict
 
-    def deafult_settings(self):
+    @staticmethod
+    def default_settings():
         """
-        Initilizes the default launch config
+        Initializes the default launch config
 
         Returns
         -------
@@ -467,7 +468,7 @@ class ConfigManager:
                     "name": "Default",
                     "db_loc": os.path.join(PARENT_DIR, 'db', 'default.db'),
                     "file_mon": [],
-                    "filters": ""
+                    "filters": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
                 }
             }
         }
@@ -491,8 +492,8 @@ class ConfigManager:
         self.config_dict = {}
         if not os.path.isfile(file):
             with open(file, "w") as FP:
-                json.dump(self.deafult_settings(), FP, indent = 4)
-                self.config_dict = self.deafult_settings()
+                json.dump(self.default_settings(), FP, indent = 4)
+                self.config_dict = self.default_settings()
         else:
             try:
                 with open(file) as FP:

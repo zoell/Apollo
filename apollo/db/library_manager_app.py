@@ -1,4 +1,3 @@
-# type: ignore
 import os, sys, time
 from threading import Thread
 from threading import Event as ThreadEvent
@@ -7,11 +6,13 @@ from typing import Callable
 from PySide6 import QtCore, QtWidgets, QtGui
 from PySide6.QtCore import QModelIndex, Qt
 
-from apollo.gui.ui_library_manager_ui import Ui_MainWindow as LibraryManager_UI
+from apollo.utils import PathUtils as PU
 from apollo.utils import AppConfig
-from apollo.db import LibraryManager, FileManager
-from apollo import PathUtils as PU
+from apollo.gui.ui_library_manager_ui import Ui_MainWindow as LibraryManager_UI
+from apollo.gui.ui_LEDT_dialog import LEDT_Dialog as LineEdit_Dialog
 from apollo.app import FileExplorer
+from apollo.db import LibraryManager, FileManager
+
 
 
 class FilesMonitored_Exp(FileExplorer):
@@ -64,7 +65,7 @@ class DBnameFileExp(FileExplorer):
 
     def RequestContextMenu(self, Point):
         MainMenu = QtWidgets.QMenu()
-        MainMenu.addAction("Add New Folder")
+        MainMenu.addAction("Add New Folder").triggered.connect(self.Add_New_Folder)
         MainMenu.addAction("Select Folder").triggered.connect(self.SelectedPath)
         MainMenu.addAction("Rename Folder")
         MainMenu.addAction("Delete Folder")
@@ -72,6 +73,24 @@ class DBnameFileExp(FileExplorer):
 
         Cursor = QtGui.QCursor()
         MainMenu.exec(Cursor.pos())
+
+    def Add_New_Folder(self):
+
+        def CreateDirectory():
+            Index = list(map(lambda x: self.FilePathModel.filePath(x), self.treeView.selectedIndexes()))
+            if len(Index) != 0 and PU.WinFileValidator(self.LEDT_widget.lineEdit.text()):
+                path = os.path.normpath(os.path.join(Index[0], self.LEDT_widget.lineEdit.text()))
+                os.mkdir(path)
+            self.LEDT_widget.close()
+
+        if not hasattr(self, "LEDT_widget"):
+            self.LEDT_widget = LineEdit_Dialog()
+
+        self.LEDT_widget.setWindowTitle("Add New Folder")
+        self.LEDT_widget.lineEdit.clear()
+        self.LEDT_widget.show()
+        self.LEDT_widget.raise_()
+        self.LEDT_widget.buttonBox.accepted.connect(CreateDirectory)
 
     def SelectedPath(self):
         Index = self.treeView.selectedIndexes()
@@ -91,11 +110,12 @@ class DBnameFileExp(FileExplorer):
         return super().show()
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+        if hasattr(self, "LEDT_widget"): self.LEDT_widget.close()
         self.PathEdit.setText(self.OGPATH)
         return super().closeEvent(event)
 
 
-class FileScanner_Thread(Thread): # untested
+class FileScanner_Thread(Thread):  # untested
     FILE_FILTERS = ["MP3", "AAC", "M4A", "MPC", "OGG", "FLAC",
                     "ALAC", "APE", "Opus", "TAK", "WavPack",
                     "WMA", "WAV", "MIDI", "MOD", "UMX", "XM"]
@@ -104,6 +124,7 @@ class FileScanner_Thread(Thread): # untested
         super().__init__()
         self.daemon = False
         self.name = "FileScanner_Thread"
+        self.END = 1
         self.FileQueue = FileQueue
         self.Slot = Slot
         self.Extension = [K for K, V in zip(FileScanner_Thread.FILE_FILTERS, Ext) if V == 1]
@@ -123,6 +144,7 @@ class FileScanner_Thread(Thread): # untested
 
     def exit(self):
         self.Running.clear()
+        self.END = 0
 
     def DeclareEvents(self):
         self.Running = ThreadEvent()
@@ -135,6 +157,7 @@ class FileScanner_Thread(Thread): # untested
         self.Scanning.set()
         super().start()
         return self
+
 
 class LibraryManager_App(QtWidgets.QMainWindow, LibraryManager_UI):
 
@@ -159,7 +182,7 @@ class LibraryManager_App(QtWidgets.QMainWindow, LibraryManager_UI):
         self.fillData(self.Config["CURRENT_DB"])
 
     def InternalState_Flags(self):
-        self.FileScannerRunning = 1
+        self.FileScannerRunning = 0
 
     def BindingFunctions(self):
         """
@@ -178,7 +201,6 @@ class LibraryManager_App(QtWidgets.QMainWindow, LibraryManager_UI):
         self.LBT_PSB_libnext.clicked.connect(lambda: (self.DB_LEDT_TextChange()))
         self.LBT_PSB_libprev.clicked.connect(lambda: (self.DB_LEDT_TextChange(-1)))
 
-
     def UpadateComboBox(self):
         Model = self.LBT_CMBX_libname.model()
         Model.removeRows(0, self.LBT_CMBX_libname.count())
@@ -191,29 +213,34 @@ class LibraryManager_App(QtWidgets.QMainWindow, LibraryManager_UI):
                 self.LBT_CMBX_libname.setCurrentIndex(idx)
 
     def RescanFolders(self):
-        self.statusBar.showMessage("Scanning For Files! This Might Take A While")
+        if not self.FileScannerRunning:
+            self.statusBar.showMessage("Scanning For Files! This Might Take A While")
 
-        # gets the selected File
-        Model = self.LBT_LSV_filesmon.model()
-        FILE_MON = []
-        for R in range(Model.rowCount()):
-            Data = Model.index(R, 0)
-            if (Data.data(QtCore.Qt.CheckStateRole) == QtCore.Qt.Checked):
-                FILE_MON.append(Data.data())
+            # gets the selected File
+            Model = self.LBT_LSV_filesmon.model()
+            FILE_MON = []
+            for R in range(Model.rowCount()):
+                Data = Model.index(R, 0)
+                if Data.data(QtCore.Qt.CheckStateRole) == QtCore.Qt.Checked:
+                    FILE_MON.append(Data.data())
 
-        # gets the selected FileExt
-        Model = self.LBT_LSV_filters.model()
-        FILTERS = []
-        for R in range(Model.rowCount()):
-            Data = Model.index(R, 0)
-            if (Data.data(QtCore.Qt.CheckStateRole) == QtCore.Qt.Checked):
-                FILTERS.append(1)
+            # gets the selected FileExt
+            Model = self.LBT_LSV_filters.model()
+            FILTERS = []
+            for R in range(Model.rowCount()):
+                Data = Model.index(R, 0)
+                if Data.data(QtCore.Qt.CheckStateRole) == QtCore.Qt.Checked:
+                    FILTERS.append(1)
+                else:
+                    FILTERS.append(0)
+
+            DB = (self.Config[f"MONITERED_DB/{self.LBT_CMBX_libname.currentText()}/db_loc"])
+            if FILTERS != [] and FILE_MON != []:
+                ScannerThread = FileScanner_Thread(FILE_MON, FILTERS, DB, self.statusBar.showMessage)
+                ScannerThread.start()
+                self.FileScannerRunning = ScannerThread.END
             else:
-                FILTERS.append(0)
-
-        DB = (self.Config[f"MONITERED_DB/{self.LBT_CMBX_libname.currentText()}/db_loc"])
-        ScannerThread = FileScanner_Thread(FILE_MON, FILTERS, DB, lambda m: self.statusBar.showMessage(m))
-        ScannerThread.start()
+                self.statusBar.showMessage("Scanning For Files! No directory Selected")
 
     def fillData(self, DB_name):
         """
@@ -235,7 +262,7 @@ class LibraryManager_App(QtWidgets.QMainWindow, LibraryManager_UI):
         self.LBT_LEDT_dbpath.setText(str(path))
 
         # Updates DB stats
-        self.LibManager.connect(path, Check = True)
+        self.LibManager.connect(path, check= True)
         self.LBT_LEDT_totartist.setText(f"{str(self.LibManager.TableArtistcount())} Artists")
         self.LBT_LEDT_totalbum.setText(f"{str(self.LibManager.TableAlbumcount())} Albums")
         self.LBT_LEDT_tottrack.setText(f"{str(self.LibManager.TableTrackcount())} Tracks")
