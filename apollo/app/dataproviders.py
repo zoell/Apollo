@@ -39,7 +39,7 @@ class SQLTableModel(QtGui.QStandardItemModel):
             return [QtGui.QStandardItem(str(V)) for V in ResultSet_dict.get(Row)]
 
         self.removeRows(0, self.rowCount())
-        ResultSet = self.DBManager.ExeQuery(f"SELECT * FROM {self.DB_TABLE}")
+        ResultSet = self.DBManager.exec_query(f"SELECT * FROM {self.DB_TABLE}")
 
         if len(ResultSet) > 0:
             ResultSet_dict = {Value[0]: Value for Value in ResultSet}
@@ -120,7 +120,7 @@ class SQLTableModel(QtGui.QStandardItemModel):
         Returns: None
         Errors: None
         """
-        ResultSet = self.DBManager.ExeQuery(f"SELECT * FROM {TableName}")
+        ResultSet = self.DBManager.exec_query(f"SELECT * FROM {TableName}")
         for Row in ResultSet:
             self.appendRow(list(map(lambda x: QtGui.QStandardItem(str(x)), Row)))
 
@@ -156,7 +156,7 @@ class SQLTableModel(QtGui.QStandardItemModel):
             Text = (self.Data_atIndex(View, [self.DB_FIELDS.index(Column)])[0])
 
         if Text != "":
-            ResultSet = self.DBManager.ExeQuery(f"""
+            ResultSet = self.DBManager.exec_query(f"""
             SELECT file_id FROM {self.DB_TABLE}
             WHERE
             album LIKE '%{Text}%'
@@ -196,7 +196,7 @@ class SQLTableModel(QtGui.QStandardItemModel):
         if self.DB_TABLE == "library":
             selectedID = self.Data_atIndex(Indexes = SelectedIndexes, Columns = [0])
             selectedID = ", ".join([f"'{v}'"for v in selectedID])
-            self.DBManager.ExeQuery(f"DELETE FROM {self.DB_TABLE} WHERE file_id IN ({selectedID})")
+            self.DBManager.exec_query(f"DELETE FROM {self.DB_TABLE} WHERE file_id IN ({selectedID})")
             self.RefreshData()
             Paths = self.Data_atIndex(SelectedIndexes, [self.DB_FIELDS.index("file_path")])
         else:

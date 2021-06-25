@@ -30,11 +30,11 @@ class Test_DataBaseManager:
         assert Manager.connect(":memory:")
 
         # checks for an post connection DB Structure integrity
-        assert Manager.StartUpChecks()
+        assert Manager.db_startup_checks()
 
         # checks for an post connection drop of main table and still manintains integrity
         Manager.DropTable("library")
-        assert Manager.StartUpChecks()
+        assert Manager.db_startup_checks()
 
         # checks for a normal connection close
 
@@ -54,7 +54,7 @@ class Test_DataBaseManager:
 
         # checks for DB file filtering
         assert Manager.connect("trial.db")
-        assert Manager.StartUpChecks()
+        assert Manager.db_startup_checks()
 
         os.remove('trial.db') # cleanup
         assert not os.path.isfile("trial.db") # cleanup
@@ -78,14 +78,14 @@ class Test_DataBaseManager:
         Manager, _ = TempFilled_DB
 
         # string query complete execution
-        assert Manager.ExeQuery("""
+        assert Manager.exec_query("""
 	        SELECT IIF(name = 'library', TRUE, FALSE)
         FROM sqlite_master WHERE type = 'table'
         """)
 
         # string build failing
         try:
-            query = Manager.ExeQuery("""
+            query = Manager.exec_query("""
 	            SELECT IIF(name = 'library', TRUE, FALSE)
             FROM sqlite_master type = 'table'
             """)
@@ -99,17 +99,17 @@ class Test_DataBaseManager:
 
         # running the function with no column constraints
         Expected = [[k,v] for k, v in enumerate(Manager.db_fields)]
-        assert Expected == Manager.ExeQuery("SELECT cid, name FROM pragma_table_info('library')")
+        assert Expected == Manager.exec_query("SELECT cid, name FROM pragma_table_info('library')")
 
         # running the function with column constraints
         Expected = [[v] for v in Manager.db_fields]
-        assert Expected == Manager.ExeQuery("SELECT cid, name FROM pragma_table_info('library')", 1)
+        assert Expected == Manager.exec_query("SELECT cid, name FROM pragma_table_info('library')", 1)
         del_TempFilled_DB()
 
     def test_indexedSelector(self, TempFilled_DB):
         Manager, Data = TempFilled_DB
         # check for getting data for a given column
-        assert [[None]] == Manager.IndexSelector("nowplaying", "file_name")
+        assert [[None]] == Manager.Index_selector("nowplaying", "file_name")
         del_TempFilled_DB()
 
     def test_CreateView_normal(self, TempFilled_DB):
@@ -191,7 +191,7 @@ class Test_DataBaseManager:
         Manager = DBManager
         Manager.DropTable("library")
 
-        assert not Manager.ExeQuery("""
+        assert not Manager.exec_query("""
 	        SELECT IIF(name = 'library', TRUE, FALSE) AS TABLE_CHECK
         FROM sqlite_master WHERE type = 'table'
         """)
@@ -202,7 +202,7 @@ class Test_DataBaseManager:
 
         Manager.DropView("nowplaying")
 
-        assert not Manager.ExeQuery("""
+        assert not Manager.exec_query("""
 	        SELECT IIF(name = 'nowplaying', TRUE, FALSE) AS TABLE_CHECK
         FROM sqlite_master WHERE type = 'view'
         """)

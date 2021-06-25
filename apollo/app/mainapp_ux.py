@@ -14,7 +14,7 @@ from apollo.app.nowplaying_tab import NowPlayingTab
 
 class ApolloUX(QtWidgets.QMainWindow, MainWindow):
     """
-    Info: Initilizes Apollo and all related functions
+    Info: Initializes Apollo and all related functions
     Args: None
     Returns: None
     Errors: None
@@ -56,9 +56,8 @@ class ApolloTabBindings(ApolloUX):
         """
         super().__init__()
         self.DBManager = LibraryManager(self.AppConfig.get("current_db_path"))
-        if self.DBManager.IsConneted():
-            self.DataProvider = ApolloDataProvider()
-            self.InitTabs()
+        self.DataProvider = ApolloDataProvider()
+        self.InitTabs()
 
     def InitTabs(self):
         """
@@ -67,8 +66,8 @@ class ApolloTabBindings(ApolloUX):
         Returns: None
         Errors: None
         """
-        self.NowPlayingTab = NowPlayingTab(self) # type: ignore
-        self.LibraryTab = LibraryTab(self) # type: ignore
+        self.NowPlayingTab = NowPlayingTab(self)
+        self.LibraryTab = LibraryTab(self)
 
 
 class ApolloMain(ApolloTabBindings):
