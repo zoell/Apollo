@@ -401,7 +401,7 @@
            <property name="maximumSize">
             <size>
              <width>16777215</width>
-             <height>24</height>
+             <height>16777215</height>
             </size>
            </property>
            <layout class="QHBoxLayout" name="horizontalLayout">
@@ -1077,7 +1077,31 @@
      <height>22</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuFiles">
+    <property name="title">
+     <string>Files</string>
+    </property>
+    <addaction name="actionDataBase_Manager"/>
+    <addaction name="actionMetadata_Edit"/>
+    <addaction name="actionFile_Orginizer"/>
+   </widget>
+   <addaction name="menuFiles"/>
   </widget>
+  <action name="actionDataBase_Manager">
+   <property name="text">
+    <string>DataBase Manager</string>
+   </property>
+  </action>
+  <action name="actionMetadata_Edit">
+   <property name="text">
+    <string>Metadata Edit</string>
+   </property>
+  </action>
+  <action name="actionFile_Orginizer">
+   <property name="text">
+    <string>File Orginizer </string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

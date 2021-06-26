@@ -17,9 +17,9 @@ class CheckableFileSystemModel(QtWidgets.QFileSystemModel): # Untested
         """
         super().__init__()
         self.checkStates = {}
-        self.rowsInserted.connect(self.checkAdded) #type: ignore
-        self.rowsRemoved.connect(self.checkParent) #type: ignore
-        self.rowsAboutToBeRemoved.connect(self.checkRemoved) #type: ignore
+        self.rowsInserted.connect(self.checkAdded) # type: ignore
+        self.rowsRemoved.connect(self.checkParent) # type: ignore
+        self.rowsAboutToBeRemoved.connect(self.checkRemoved) # type: ignore
 
     def checkState(self, index):
         """
@@ -153,7 +153,7 @@ class CheckableFileSystemModel(QtWidgets.QFileSystemModel): # Untested
             self.setCheckState(index, value, emitStateChange)
             for row in range(self.rowCount(index)):
                 self.setData(self.index(row, 0, index), value, QtCore.Qt.CheckStateRole,
-                            checkParent=False, emitStateChange=False)
+                            checkParent = False, emitStateChange = False)
             self.dataChanged.emit(index, index)
             if checkParent:
                 self.checkParent(index.parent())

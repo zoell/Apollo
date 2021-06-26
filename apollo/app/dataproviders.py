@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt
 from apollo.db.library_manager import DataBaseManager
 from apollo import exe_time
 
+
 class SQLTableModel(QtGui.QStandardItemModel):
     """
     Info: Extends the Standard Item Model
@@ -23,6 +24,7 @@ class SQLTableModel(QtGui.QStandardItemModel):
         """
         super().__init__()
         self.DBManager = Driver
+        self.DB_NAME = Driver.DB_NAME
         self.DB_FIELDS = self.DBManager.db_fields
         self.DB_TABLE = None
 

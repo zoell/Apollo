@@ -55,7 +55,7 @@ class ApolloTabBindings(ApolloUX):
         Errors: None
         """
         super().__init__()
-        self.DBManager = LibraryManager(self.AppConfig.get("current_db_path"))
+        self.DBManager = LibraryManager(self.AppConfig["current_db_path"])
         self.DataProvider = ApolloDataProvider()
         self.InitTabs()
 

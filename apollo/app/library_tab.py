@@ -34,7 +34,7 @@ class LibraryTab:
 
     def Init_DataModels(self):
         self.MainView = self.UI.LDT_TBV_maintable
-        self.MainModel = SQLTableModel()
+        self.MainModel = SQLTableModel(self.UI.DBManager)
         self.MainModel.LoadTable("library", self.MainModel.DB_FIELDS)
         self.DataProvider.AddModel(self.MainModel, "library_model")
         self.MainView.setModel(self.MainModel)

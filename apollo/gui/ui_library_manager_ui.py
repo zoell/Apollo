@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'library_manager_uiZQBToF.ui'
+## Form generated from reading UI file 'library_manager_uiLDWdIL.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.1.0
 ##
@@ -463,13 +463,6 @@ class Ui_MainWindow(object):
         self.LBT_PSB_fileremove.setMaximumSize(QSize(16777215, 24))
 
         self.horizontalLayout_4.addWidget(self.LBT_PSB_fileremove)
-
-        self.LBT_PSB_filerescan = QPushButton(self.LBT_GBX_filemon)
-        self.LBT_PSB_filerescan.setObjectName(u"LBT_PSB_filerescan")
-        self.LBT_PSB_filerescan.setMinimumSize(QSize(24, 24))
-        self.LBT_PSB_filerescan.setMaximumSize(QSize(16777215, 24))
-
-        self.horizontalLayout_4.addWidget(self.LBT_PSB_filerescan)
 
 
         self.gridLayout_6.addLayout(self.horizontalLayout_4, 1, 0, 1, 1)
@@ -1962,13 +1955,12 @@ class Ui_MainWindow(object):
         self.LBT_GBX_filemon.setTitle(QCoreApplication.translate("MainWindow", u"Files Monitored", None))
         self.LBT_PSB_fileadd.setText(QCoreApplication.translate("MainWindow", u"Add", None))
         self.LBT_PSB_fileremove.setText(QCoreApplication.translate("MainWindow", u"Remove", None))
-        self.LBT_PSB_filerescan.setText(QCoreApplication.translate("MainWindow", u"Rescan", None))
         self.LBT_GBX_filefilter.setTitle(QCoreApplication.translate("MainWindow", u"File Extension FIlters", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"DB Name", None))
         self.LBT_PSB_import.setText(QCoreApplication.translate("MainWindow", u"Import", None))
         self.LBT_PSB_export.setText(QCoreApplication.translate("MainWindow", u"Export", None))
         self.LBT_PSB_active.setText(QCoreApplication.translate("MainWindow", u"Set as Active", None))
-        self.LBT_PSB_libadd.setText(QCoreApplication.translate("MainWindow", u"Add", None))
+        self.LBT_PSB_libadd.setText(QCoreApplication.translate("MainWindow", u"Save", None))
         self.LBT_PSB_libremove.setText(QCoreApplication.translate("MainWindow", u"Remove", None))
         self.LBT_PSB_librescan.setText(QCoreApplication.translate("MainWindow", u"Rescan", None))
         self.LBM_TABWG_main.setTabText(self.LBM_TABWG_main.indexOf(self.LBM_WDG_LBT), QCoreApplication.translate("MainWindow", u"Library ", None))

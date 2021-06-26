@@ -285,7 +285,7 @@ class NowPlayingTab:
         Returns: None
         Errors: None
         """
-        ### Development code not production code will cause bugs if not removed
+        # Development code not production code will cause bugs if not remove
         if UI != None:
             self.UI = UI
         else:

@@ -853,7 +853,7 @@ class LibraryManager(FileManager):
     >>> library_manager.connect("database.db")
     """
 
-    def __init__(self, db_name=None):
+    def __init__(self, db_name = None):
         """Constructor"""
         self.db_fields = DBFIELDS
         super().__init__()

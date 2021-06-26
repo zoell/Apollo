@@ -112,6 +112,8 @@ class ApolloExecute:
         self.app.setStyle(style)
         self.UI = ApolloMain()
         self.UI.Theme.LoadTheme(app = self.app)
+        self.UI.footer_PSB_play.pressed.connect(self.app.setStyleSheet(self.UI.Theme.GenStyleSheet(self.UI.Theme.DefaultPallete())))
+
         self.UI.show()
 
     def Execute(self):
