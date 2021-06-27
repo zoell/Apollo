@@ -52,17 +52,17 @@ class Connection:
         self.DB = self.connect(db_name)
 
     def __enter__(self):
-        db_driver = QSqlDatabase.addDatabase("QSQLITE", "DEFAULT")
+        db_driver = QSqlDatabase.addDatabase("QSQLITE", QSqlDatabase.defaultConnection)
         db_driver.setDatabaseName(self.DB)
-        if db_driver.open():
+        if db_driver.open() and db_driver.isValid() and db_driver.isOpen():
             return db_driver
         else:
             raise ConnectionError(self.DB)
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         if any([exc_type, exc_value, exc_traceback]):
-            print(exc_type, exc_value, exc_traceback)
-        QSqlDatabase.removeDatabase("DEFAULT")
+            print(f"exc_type: {exc_type}\nexc_value: {exc_value}\nexc_traceback: {exc_traceback}")
+        QSqlDatabase.removeDatabase(QSqlDatabase.defaultConnection)
 
     @staticmethod
     def connect(db_name: str):  # Tested
@@ -221,8 +221,8 @@ class DataBaseManager:
 
         Returns
         -------
-        QSqlQuery
-            SQLQuery that has been executed
+        List
+            list of matrix of Row X Column, if NULL []
         """
         # creates a connection to the DB that is linked to the main class
         with Connection(self.DB_NAME) as CON:
@@ -230,20 +230,24 @@ class DataBaseManager:
                 query_str = query
                 query = QSqlQuery(db = CON)
                 if not query.prepare(query_str):
+                    connection_info = (str(CON))
                     del CON
-                    raise QueryBuildFailed(query_str)
+                    raise QueryBuildFailed(f"{connection_info}\n{query_str}")
             else:
                 # if creating of the Query fails it raises an exception
+                connection_info = (str(CON))
                 del CON
-                raise Exception()
+                raise QueryBuildFailed(f"{connection_info}")
 
             # executes the given query
             query_executed = query.exec()
             if not query_executed:
+                connection_info = (str(CON))
                 msg = f"""
                     EXE: {query_executed}
                     ERROR: {(query.lastError().text())}
                     Query: {query.lastQuery()}
+                    Connection: {connection_info}
                     """
                 del CON
                 raise QueryExecutionFailed(dedenter(msg, 12))
@@ -502,11 +506,11 @@ class DataBaseManager:
         with Connection(self.DB_NAME) as CON:
             # sets up the transcation
             CON.transaction()
-            QSqlQuery("PRAGMA journal_mode = MEMORY", db=CON)
+            QSqlQuery("PRAGMA journal_mode = MEMORY", db = CON).exec()
 
             columns = ", ".join(metadata.keys())
             placeholders = ", ".join(["?" for i in metadata.keys()])
-            query = QSqlQuery(f"INSERT OR IGNORE INTO library ({columns}) VALUES ({placeholders})", db=CON)
+            query = QSqlQuery(f"INSERT OR IGNORE INTO library ({columns}) VALUES ({placeholders})", db = CON)
             for keys in metadata.keys():
                 query.addBindValue(metadata.get(keys))
 
@@ -518,7 +522,7 @@ class DataBaseManager:
                 del CON
                 raise QueryExecutionFailed(dedenter(msg, 12))
 
-            QSqlQuery("PRAGMA journal_mode = WAL", db=CON)
+            QSqlQuery("PRAGMA journal_mode = WAL", db = CON).exec()
             CON.commit()
             del CON
 
@@ -792,11 +796,14 @@ class FileManager(DataBaseManager):  # pragma: no cover
             Additional Callback with (arg: str) prameter, by default lambda:''
         """
         BatchMetadata = []
+        Existing_Paths = []
         FileHashList = []
 
         Slot(f"Scanning {Dir}")
-        Existing_Paths = self.exec_query(f"SELECT path_id FROM library")
-        FileHashList = self.exec_query(f"SELECT file_id FROM library")
+        if [[0]] != self.exec_query("SELECT COUNT(path_id) FROM library"):
+            Existing_Paths = self.exec_query(f"SELECT path_id FROM library")
+            FileHashList = self.exec_query(f"SELECT file_id FROM library")
+
         for D, SD, F in os.walk(os.path.normpath(Dir)):
             for file in F:
                 # checks for file ext
@@ -814,11 +821,10 @@ class FileManager(DataBaseManager):  # pragma: no cover
                         Metadata["path_id"] = path_hash
                         Metadata["file_id"] = Filehash
                         BatchMetadata.append(list(Metadata.values()))
-
-                #     else:
-                #         Slot(f"SKIPPED: {file}")
-                # else:
-                #     Slot(f"SKIPPED: {file}")
+                    else:
+                        Slot(f"SKIPPED: {file}")
+                else:
+                    Slot(f"SKIPPED: {file}")
 
         self.BatchInsert_Metadata(self.TransposeMeatadata(BatchMetadata))
         Slot(f"Completed Scanning {Dir}")

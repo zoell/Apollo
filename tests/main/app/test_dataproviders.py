@@ -5,7 +5,7 @@ import sys
 
 from apollo.app.dataproviders import SQLTableModel
 from apollo.db import DataBaseManager
-from tests.main.fixtures import Gen_DbTable_Data, del_TempFilled_DB, TempFilled_DB
+from tests.testing_tools.tools import Gen_DbTable_Data, del_TempFilled_DB, TempFilled_DB
 
 @pytest.fixture
 def getSQLModel(TempFilled_DB):
@@ -59,4 +59,4 @@ class Test_SQLTableModel:
         assert Table == Model.Data_atIndex(View.selectedIndexes())
 
 
-
+class Test_ApolloDataProvider: ...

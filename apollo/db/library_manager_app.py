@@ -10,8 +10,8 @@ from apollo.utils import PathUtils as PU
 from apollo.utils import AppConfig
 from apollo.gui.ui_library_manager_ui import Ui_MainWindow as LibraryManager_UI
 from apollo.gui.ui_LEDT_dialog import LEDT_Dialog as LineEdit_Dialog
-from apollo.app import FileExplorer
-from apollo.db import LibraryManager, Connection
+from apollo.app.misc_app import FileExplorer
+from apollo.db import FileManager, Connection, LibraryManager
 
 
 LBT_FILE_FILTERS = ("MP3", "AAC", "M4A", "MPC", "OGG", "FLAC",
@@ -24,13 +24,15 @@ class FileScanner_Thread(Thread):  # untested
 
     def __init__(self, FileQueue: list, Ext: list, DB_name: str, Slot: Callable = lambda x: ''):
         super().__init__()
+        self.DeclareEvents()
         self.daemon = False
         self.name = "FileScanner_Thread"
         self.FileQueue = FileQueue
         self.Slot = Slot
         self.Extension = [K for K, V in zip(FileScanner_Thread.FILE_FILTERS, Ext) if V == 1]
-        self.Manager = LibraryManager(DB_name)
-        self.DeclareEvents()
+        self.Manager = FileManager()
+        self.Manager.connect(DB_name, check = False)
+
 
     def finished(self):
         """
@@ -509,7 +511,7 @@ class DBManager_Tab:
             self.UI.LBT_LEDT_dbpath.setText(str(path))
 
             # Updates DB stats
-            self.UI.LibManager.connect(path, check=True)
+            self.UI.LibManager.connect(path, check = False)
             self.UI.LBT_LEDT_totartist.setText(f"{str(self.UI.LibManager.TableArtistcount())} Artists")
             self.UI.LBT_LEDT_totalbum.setText(f"{str(self.UI.LibManager.TableAlbumcount())} Albums")
             self.UI.LBT_LEDT_tottrack.setText(f"{str(self.UI.LibManager.TableTrackcount())} Tracks")
@@ -598,11 +600,11 @@ class DBManager_Tab:
 
             DB = (self.UI.Config[f"MONITERED_DB/{self.UI.LBT_CMBX_libname.currentText()}/db_loc"])
             if FILTERS != [] and FILE_MON != []:
+                self.Updated_DB()
                 started()
                 ScannerThread = FileScanner_Thread(FILE_MON, FILTERS, DB, self.UI.statusBar.showMessage)
-                ScannerThread.start()
                 ScannerThread.finished = finished
-                self.Updated_DB()
+                ScannerThread.start()
             else:
                 self.UI.statusBar.showMessage("Scanning For Files! No directory Selected")
         else:

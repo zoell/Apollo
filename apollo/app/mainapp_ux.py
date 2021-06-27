@@ -7,6 +7,7 @@ from apollo.gui.ui_mainwindow_apollo import Ui_MainWindow as MainWindow
 from apollo.utils import AppConfig
 from apollo.plugins.app_theme import Theme
 from apollo.db import LibraryManager
+from apollo.db.library_manager_app import LibraryManager_App
 from apollo.app.dataproviders import ApolloDataProvider
 from apollo.app.library_tab import LibraryTab
 from apollo.app.nowplaying_tab import NowPlayingTab
@@ -58,6 +59,16 @@ class ApolloTabBindings(ApolloUX):
         self.DBManager = LibraryManager(self.AppConfig["current_db_path"])
         self.DataProvider = ApolloDataProvider()
         self.InitTabs()
+        self.FunctionBindings()
+
+    def FunctionBindings(self):
+        self.actionDataBase_Manager.triggered.connect(self.Launch_LibraryManagerApp)
+
+    def Launch_LibraryManagerApp(self):
+        self.LibraryManagerApp = LibraryManager_App()
+        self.LibraryManagerApp.raise_()
+        self.LibraryManagerApp.show()
+        self.LibraryManagerApp.LBT_PSB_librescan.click()
 
     def InitTabs(self):
         """

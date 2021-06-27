@@ -6,7 +6,7 @@ from apollo import ConfigManager, PlayingQueue, AppConfig
 
 @pytest.fixture
 def getConfigManager():
-    json_dict =  {
+    json_dict = {
         "destination_addresses": [
             "Philadelphia, PA, USA"
         ],
@@ -37,6 +37,18 @@ def PQ():
     return PlayingQueue()
 
 
+def Test_exe_time(): ...
+
+def Test_tryit(): ...
+
+def Test_ThreadIt(): ...
+
+def Test_dedenter(): ...
+
+
+class Test_PathUtils: ...
+
+
 class Test_AppConfig:
 
     def test_Getvalue(self, getConfigManager):
@@ -51,8 +63,12 @@ class Test_AppConfig:
         # get data as str
         assert "1 hour 44 mins" == manager["rows/elements/duration/text"]
         # get data at invalid path
-        assert None == manager["rows//duration/text"]
-
+        try:
+            manager["rows//duration/text"]
+        except IndexError:
+            assert True
+        else:
+            assert False
 
     def test_Setvalue(self, getConfigManager):
         manager = getConfigManager
