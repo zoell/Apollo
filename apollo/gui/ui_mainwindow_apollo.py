@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'mainwindow_apolloeeHMNk.ui'
+## Form generated from reading UI file 'mainwindow_apolloEklsoc.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.1.0
 ##
@@ -98,7 +98,7 @@ class Ui_MainWindow(object):
         sizePolicy3.setHeightForWidth(self.LBT_TLB_search_group.sizePolicy().hasHeightForWidth())
         self.LBT_TLB_search_group.setSizePolicy(sizePolicy3)
         self.LBT_TLB_search_group.setMinimumSize(QSize(0, 0))
-        self.LBT_TLB_search_group.setMaximumSize(QSize(24, 24))
+        self.LBT_TLB_search_group.setMaximumSize(QSize(16777215, 24))
         self.LBT_TLB_search_group.setPopupMode(QToolButton.MenuButtonPopup)
         self.LBT_TLB_search_group.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
 
@@ -168,6 +168,7 @@ class Ui_MainWindow(object):
         self.MW_HSP_subwindows.addWidget(self.SubW_TABWG_MainTab)
         self.SubW_FR_queue = QFrame(self.MW_HSP_subwindows)
         self.SubW_FR_queue.setObjectName(u"SubW_FR_queue")
+        self.SubW_FR_queue.setMinimumSize(QSize(257, 535))
         self.SubW_FR_queue.setFrameShape(QFrame.StyledPanel)
         self.SubW_FR_queue.setFrameShadow(QFrame.Raised)
         self.gridLayout_3 = QGridLayout(self.SubW_FR_queue)

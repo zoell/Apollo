@@ -48,7 +48,7 @@ class SQLTableModel(QtGui.QStandardItemModel):
             for Row in Keys:
                 self.appendRow(FilterData(Row))
 
-    def Data_atIndex(self, Indexes:[] = None, Rows:[] = None, Columns:[] = None):
+    def Data_atIndex(self, Indexes: list = [], Rows: list = [], Columns: list = []):
         """
         Info: returns all the data at selected Positions in a TBV
         Args:
@@ -60,26 +60,30 @@ class SQLTableModel(QtGui.QStandardItemModel):
         """
         Table = {}
 
-        if Columns == None:
+        if Columns == []:
             Columns = list(range(len(self.DB_FIELDS)))
 
-        if Indexes != None:
+        if Indexes != []:
             for index in Indexes:
                 Row = index.row()
                 Col = index.column()
                 if Col in Columns:
                     if Table.get(Row):
                         Table[Row].append(index.data())
-                    else:
+                    elif len(Columns) >= 2:
                         Table[Row] = [index.data()]
+                    else:
+                        Table[Row] = index.data()
 
-        if Rows != None:
+        if Rows != []:
             for Row in Rows:
                 for Col in Columns:
                     if Table.get(Row):
                         Table[Row].append(self.index(Row, Col).data())
-                    else:
+                    elif len(Columns) >= 2:
                         Table[Row] = [self.index(Row, Col).data()]
+                    else:
+                        Table[Row] = self.index(Row, Col).data()
 
         return list(Table.values())
 

@@ -15,91 +15,84 @@ from apollo.app.nowplaying_tab import NowPlayingTab
 
 class ApolloUX(QtWidgets.QMainWindow, MainWindow):
     """
-    Info: Initializes Apollo and all related functions
-    Args: None
-    Returns: None
-    Errors: None
+    Initializes Apollo and all related functions
     """
     def __init__(self):
         """
-        Info:
         Class Constructor
-
-        Args: None
-        Returns: None
-        Errors: None
         """
         super().__init__()
         self.setupUi(self)
         self.setupUx()
+
+        # Init
         self.AppConfig = AppConfig()
         self.Theme = Theme()
+        self.DBManager = LibraryManager(self.AppConfig["current_db_path"])
+        self.DataProvider = ApolloDataProvider()
 
     def setupUx(self):
-        pass
+        self.MW_HSP_subwindows.setCollapsible(0, False)
 
 
-class ApolloTabBindings(ApolloUX):
+class ApolloMain(ApolloUX):
     """
-    Info: binds all the tabs with the UI
-    Args: None
-    Returns: None
-    Errors: None
+    Initilizes Apollo and all related functions
     """
     def __init__(self):
         """
-        Info:
         Class Constructor
-
-        Args: None
-        Returns: None
-        Errors: None
         """
         super().__init__()
-        self.DBManager = LibraryManager(self.AppConfig["current_db_path"])
-        self.DataProvider = ApolloDataProvider()
         self.InitTabs()
         self.FunctionBindings()
 
     def FunctionBindings(self):
-        self.actionDataBase_Manager.triggered.connect(self.Launch_LibraryManagerApp)
+        """
+        Binds all the functions and actions
+        """
+        self.actionDataBase_Manager.triggered.connect(lambda: self.Launch_LibraryManagerApp(0))
+        self.actionMetadata_Edit.triggered.connect(lambda: self.Launch_LibraryManagerApp(1))
+        self.actionFile_Orginizer.triggered.connect(lambda: self.Launch_LibraryManagerApp(2))
 
-    def Launch_LibraryManagerApp(self):
+    def Launch_LibraryManagerApp(self, TabOpen: int = 0):
+        """
+        Launches the Library Manager app
+
+        Parameters
+        ----------
+        TabOpen: int
+            Tab to point to when the app is launced
+        """
         self.LibraryManagerApp = LibraryManager_App()
+        self.LibraryManagerApp.LBM_TABWG_main.setCurrentIndex(TabOpen)
         self.LibraryManagerApp.raise_()
         self.LibraryManagerApp.show()
-        self.LibraryManagerApp.LBT_PSB_librescan.click()
+
+    def closeSubTabs(self):
+        """
+        Closes all te subtabs declared
+        """
+        if hasattr(self, "LibraryManagerApp"):
+            self.LibraryManagerApp.close()
 
     def InitTabs(self):
         """
-        Info: Initilizes all the tabs for apollo
-        Args: None
-        Returns: None
-        Errors: None
+        Initilizes all the tabs for apollo
         """
         self.NowPlayingTab = NowPlayingTab(self)
         self.LibraryTab = LibraryTab(self)
 
-
-class ApolloMain(ApolloTabBindings):
-    """
-    Info:
-    Initilizes Apollo and all related functions
-
-    Args: None
-    Returns: None
-    Errors: None
-    """
-    def __init__(self):
+    def closeEvent(self, event:QtGui.QCloseEvent):
         """
-        Info:
-        Class Constructor
+        Close Event for the Main App
 
-        Args: None
-        Returns: None
-        Errors: None
+        Parameters
+        ----------
+        event: QtGui.QCloseEvent
+            Close Event when the tab is closed
         """
-        super().__init__()
+        self.closeSubTabs()
 
 
 if __name__ == "__main__":

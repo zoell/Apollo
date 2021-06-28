@@ -230,6 +230,7 @@
             background-color: $ui-01;
             color: $text-02;
             margin: 0px;
+            min-width: 98px;
         }
 
         QMenu::separator {
@@ -249,6 +250,7 @@
             padding: 4px 24px 4px 24px;
             color: $text-01;
             border: 1px solid transparent;
+            min-width: 128px;
             /* Reserve space for selection border */
         }
 
@@ -311,7 +313,7 @@
         }
 
         QMenu::right-arrow {
-            image: url(":/icon_pack/png/32/branch_closed_icon-01.png");
+            image: url(":/icon_pack/png/24/chevron-right_icon-01.png");
             height: 20px;
             width: 20px;
         }

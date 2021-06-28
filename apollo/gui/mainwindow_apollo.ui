@@ -189,7 +189,7 @@
                    </property>
                    <property name="maximumSize">
                     <size>
-                     <width>24</width>
+                     <width>16777215</width>
                      <height>24</height>
                     </size>
                    </property>
@@ -334,6 +334,12 @@
         </widget>
        </widget>
        <widget class="QFrame" name="SubW_FR_queue">
+        <property name="minimumSize">
+         <size>
+          <width>257</width>
+          <height>535</height>
+         </size>
+        </property>
         <property name="frameShape">
          <enum>QFrame::StyledPanel</enum>
         </property>

@@ -1,6 +1,6 @@
 import sys
 
-from PySide6 import QtWidgets, QtGui, QtCore
+from PySide6 import QtWidgets, QtGui, QtCore, QtSql
 from PySide6.QtCore import QPoint, QRect, QSize, Qt
 
 from apollo.utils import PlayingQueue, exe_time
@@ -10,51 +10,40 @@ from apollo.db import DBFIELDS
 
 class NowPlayingQueue(SQLTableModel):
     """
-    Info: Utilities for data and communication between tabs
-    Args: None
-    Returns: None
-    Errors: None
+    Utilities for data and communication between tabs
     """
-    def __init__(self, Driver):
+    def __init__(self, Driver: QtSql.QSqlDriver):
         """
-        Info: Constructor
-        Args: None
-        Returns: None
-        Errors: None
+        Class Constructor
         """
         super().__init__(Driver)
         self.PlayingQueue = PlayingQueue()
 
-    def Get_columnData(self, Column):
+    def Get_columnData(self, Column: int):
         """
-        Info: Gets Data grom the model
-        Args:
-        Column: int
-            -> index of the column to get data from
+        Gets Data from the model
 
-        Returns: List
-        Errors: None
+        Parameters
+        ----------
+        Column: int
+            index of the column to get data from
+
+        Returns
+        -------
+        List:
+            Column Data
         """
         return self.Data_atIndex(Rows = list(range(self.rowCount())), Columns = [Column])
 
-    def PlayNow(self, Indexes):
-        """
-        Info: Gets selected indexes from View and adds to model
-        Args:
-        View: QtTableView
-            -> view to get data from
-
-        Returns: None
-        Errors: None
-        """
+    def PlayNow(self, Indexes: [QtCore.QModelIndex]):
+        """"""
         Indexes = self.Data_atIndex(Indexes = Indexes, Columns = [0])
         self.DBManager.CreateView("nowplaying", Indexes)
         self.RefreshData()
-
         self.PlayingQueue.RemoveElements()
         self.PlayingQueue.AddElements(self.Get_columnData(0))
 
-    def PlayShuffled(self, Indexes):
+    def PlayShuffled(self, Indexes: [QtCore.QModelIndex]):
         """
         Info: Gets selected indexes from View and adds Shuffled Data to model
         Args:
@@ -67,11 +56,10 @@ class NowPlayingQueue(SQLTableModel):
         Indexes = self.Data_atIndex(Indexes = Indexes, Columns = [0])
         self.DBManager.CreateView("nowplaying", Indexes, Shuffled = True)
         self.RefreshData()
-
         self.PlayingQueue.RemoveElements()
         self.PlayingQueue.AddElements(self.Get_columnData(0))
 
-    def PlayArtist(self, Indexes):
+    def PlayArtist(self, Indexes: [QtCore.QModelIndex]):
         """
         Info: Gets selected Artists from View and adds to model
         Args:
@@ -84,11 +72,10 @@ class NowPlayingQueue(SQLTableModel):
         Indexes = self.Data_atIndex(Indexes = Indexes,Columns = [self.DB_FIELDS.index('artist')])
         self.DBManager.CreateView("nowplaying", Indexes, FilterField  = 'artist', Filter = True)
         self.RefreshData()
-
         self.PlayingQueue.RemoveElements()
         self.PlayingQueue.AddElements(self.Get_columnData(0))
 
-    def PlayAlbum(self, Indexes):
+    def PlayAlbum(self, Indexes: [QtCore.QModelIndex]):
         """
         Info: Gets selected Album from View and adds to model
         Args:
@@ -98,14 +85,13 @@ class NowPlayingQueue(SQLTableModel):
         Returns: None
         Errors: None
         """
-        Indexes = self.Data_atIndex(Indexes = Indexes,Columns = [self.DB_FIELDS.index('album')])
-        self.DBManager.CreateView("nowplaying", Indexes, FilterField  = 'album', Filter = True)
+        Indexes = self.Data_atIndex(Indexes = Indexes, Columns = [self.DB_FIELDS.index('album')])
+        self.DBManager.CreateView("nowplaying", Indexes, FilterField = 'album', Filter = True)
         self.RefreshData()
-
         self.PlayingQueue.RemoveElements()
         self.PlayingQueue.AddElements(self.Get_columnData(0))
 
-    def PlayGenre(self, Indexes):
+    def PlayGenre(self, Indexes: [QtCore.QModelIndex]):
         """
         Info: Gets selected genre from View and adds to model
         Args:
@@ -115,14 +101,13 @@ class NowPlayingQueue(SQLTableModel):
         Returns: None
         Errors: None
         """
-        Indexes = self.Data_atIndex(Indexes = Indexes,Columns = [self.DB_FIELDS.index('genre')])
-        self.DBManager.CreateView("nowplaying", Indexes, FilterField  = 'genre', Filter = True)
+        Indexes = self.Data_atIndex(Indexes = Indexes, Columns = [self.DB_FIELDS.index('genre')])
+        self.DBManager.CreateView("nowplaying", Indexes, FilterField = 'genre', Filter = True)
         self.RefreshData()
-
         self.PlayingQueue.RemoveElements()
         self.PlayingQueue.AddElements(self.Get_columnData(0))
 
-    def QueueNext(self, Indexes):
+    def QueueNext(self, Indexes: [QtCore.QModelIndex]):
         """
         Info: Gets selected indexes from View and queues to model
         Args:
@@ -138,7 +123,7 @@ class NowPlayingQueue(SQLTableModel):
         self.DBManager.CreateView("nowplaying", Indexes)
         self.OrderTable(Indexes)
 
-    def QueueLast(self, Indexes):
+    def QueueLast(self, Indexes: [QtCore.QModelIndex]):
         """
         Info: Gets selected indexes from View and queues to model
         Args:
@@ -149,6 +134,52 @@ class NowPlayingQueue(SQLTableModel):
         Errors: None
         """
         NewIndexes = self.Data_atIndex(Indexes = Indexes, Columns = [0])
+        self.PlayingQueue.AddElements(NewIndexes)
+        Indexes = self.PlayingQueue.GetQueue()
+        self.DBManager.CreateView("nowplaying", Indexes)
+        self.OrderTable(Indexes)
+
+    def QueueAlbumNext(self, Indexes: [QtCore.QModelIndex]):
+        """
+        Info: Gets selected indexes from View and queues to model
+        Args:
+        View: QtTableView
+            -> view to get data from
+
+        Returns: None
+        Errors: None
+        """
+        NewIndexes = self.Data_atIndex(Indexes = Indexes, Columns = [self.DB_FIELDS.index('album')])
+        NewIndexes = ", ".join([f"'{v}'" for v in NewIndexes])
+        NewIndexes = self.DBManager.exec_query(f"""
+        SELECT file_id
+        FROM library
+        WHERE album IN ({NewIndexes})
+        OR lower(album) IN ({NewIndexes})
+        """)
+        self.PlayingQueue.AddNext(NewIndexes)
+        Indexes = self.PlayingQueue.GetQueue()
+        self.DBManager.CreateView("nowplaying", Indexes)
+        self.OrderTable(Indexes)
+
+    def QueueAlbumLast(self, Indexes: [QtCore.QModelIndex]):
+        """
+        Info: Gets selected indexes from View and queues to model
+        Args:
+        View: QtTableView
+            -> view to get data from
+
+        Returns: None
+        Errors: None
+        """
+        NewIndexes = self.Data_atIndex(Indexes = Indexes, Columns = [self.DB_FIELDS.index('album')])
+        NewIndexes = ", ".join([f"'{v}'" for v in NewIndexes])
+        NewIndexes = self.DBManager.exec_query(f"""
+        SELECT file_id
+        FROM library
+        WHERE album IN ({NewIndexes})
+        OR lower(album) IN ({NewIndexes})
+        """)
         self.PlayingQueue.AddElements(NewIndexes)
         Indexes = self.PlayingQueue.GetQueue()
         self.DBManager.CreateView("nowplaying", Indexes)
@@ -199,7 +230,7 @@ class NowPlaying_ItemDelegate(QtWidgets.QStyledItemDelegate):
         painter.restore()
 
     def sizeHint(self, option, index):
-        return (QSize(option.rect.width(), 64))
+        return QSize(option.rect.width(), 64)
 
     def DrawWidget(self, Painter: QtGui.QPainter, Option, Index):
         state = Option.state
@@ -273,10 +304,7 @@ class NowPlaying_ItemDelegate(QtWidgets.QStyledItemDelegate):
 
 class NowPlayingTab:
     """
-    Info: Now PLaying Tab
-    Args: None
-    Returns: None
-    Errors: None
+    Now PLaying Tab
     """
     def __init__(self, UI):
         """

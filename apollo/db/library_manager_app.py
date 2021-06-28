@@ -33,7 +33,6 @@ class FileScanner_Thread(Thread):  # untested
         self.Manager = FileManager()
         self.Manager.connect(DB_name, check = False)
 
-
     def finished(self):
         """
         Interface function to call at the end of the thread

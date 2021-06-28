@@ -1,14 +1,13 @@
-import sys, os, re, datetime, re, hashlib, json, time, pathlib
+import datetime
+import hashlib
+import os
+import random
 from typing import Callable, Union
 
-import mutagen
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
-from PySide6 import QtWidgets, QtGui, QtCore
-from PySide6.QtCore import Qt
 
-from apollo import exe_time, dedenter, ThreadIt, PathUtils
+from apollo import exe_time, dedenter, PathUtils
 from apollo.plugins.audio_player import MediaFile
-from apollo import PARENT_DIR
 
 DBFIELDS = ("file_id", "path_id", "file_name", "file_path", "album",
             "albumartist", "artist", "author", "bpm", "compilation",
@@ -52,7 +51,7 @@ class Connection:
         self.DB = self.connect(db_name)
 
     def __enter__(self):
-        db_driver = QSqlDatabase.addDatabase("QSQLITE", QSqlDatabase.defaultConnection)
+        db_driver = QSqlDatabase.addDatabase("QSQLITE", str(random.random()))
         db_driver.setDatabaseName(self.DB)
         if db_driver.open() and db_driver.isValid() and db_driver.isOpen():
             return db_driver
@@ -62,7 +61,7 @@ class Connection:
     def __exit__(self, exc_type, exc_value, exc_traceback):
         if any([exc_type, exc_value, exc_traceback]):
             print(f"exc_type: {exc_type}\nexc_value: {exc_value}\nexc_traceback: {exc_traceback}")
-        QSqlDatabase.removeDatabase(QSqlDatabase.defaultConnection)
+        QSqlDatabase.removeDatabase(str(random.random()))
 
     @staticmethod
     def connect(db_name: str):  # Tested
@@ -276,11 +275,13 @@ class DataBaseManager:
         data = []
         if column is None:
             column = query.record().count()
+
+        if column == 1:
             while query.next():
-                data.append([query.value(C) for C in range(column)])
+                data.append(query.value(0))
         else:
             while query.next():
-                data.append([query.value(column)])
+                data.append([query.value(C) for C in range(column)])
 
         return data
 
@@ -330,7 +331,7 @@ class DataBaseManager:
         return self.exec_query(f"SELECT * FROM {name}")
 
     ####################################################################################################################
-    # Create, Drop, Insert Type Functions
+    # Create, Drop, Insert Functions
     ####################################################################################################################
 
     def Create_LibraryTable(self):  # Tested
