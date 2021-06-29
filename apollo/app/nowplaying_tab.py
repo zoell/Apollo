@@ -185,6 +185,36 @@ class NowPlayingQueue(SQLTableModel):
         self.DBManager.CreateView("nowplaying", Indexes)
         self.OrderTable(Indexes)
 
+    def SearchModel(self, query: str, View: QtWidgets.QListView):
+        """
+        Queries the tables and displays the matched rows
+
+        Parameters
+        ----------
+        query: str
+            Query string to search for
+        View: QtWidgets.QTableView
+            View to apply mask to
+        """
+        if query == "":
+            for Row in range(self.rowCount()):
+                View.setRowHidden(Row, False)
+            return None
+
+        for Row in range(self.rowCount()):
+            Query = []
+            for Col in ["album", "albumartist", "artist", "title"]:
+                Col = self.DB_FIELDS.index(Col)
+                data = self.index(Row, Col).data()
+                Query.append(data.find(query) != -1)
+                Query.append(data.find(query.upper()) != -1)
+                Query.append(data.find(query.lower()) != -1)
+                Query.append(data.find(query.title()) != -1)
+
+            if any(Query):
+                View.setRowHidden(Row, False)
+            else:
+                View.setRowHidden(Row, True)
 
 class NowPlaying_ItemDelegate(QtWidgets.QStyledItemDelegate):
     """
@@ -308,10 +338,7 @@ class NowPlayingTab:
     """
     def __init__(self, UI):
         """
-        Info: constructor
-        Args: None
-        Returns: None
-        Errors: None
+        Class constructor
         """
         # Development code not production code will cause bugs if not remove
         if UI != None:
@@ -322,18 +349,26 @@ class NowPlayingTab:
         ###
         self.DataProvider = self.UI.DataProvider
         self.Init_DataModels()
+        self.Function_Bindings()
 
     def Init_DataModels(self):
+        """
+        Inits all the Data Model
+        """
+        self.MainView = self.UI.NPQ_LSV_mainqueue
         self.MainModel = NowPlayingQueue(self.UI.DBManager)
         self.MainModel.LoadTable("nowplaying", self.MainModel.DB_FIELDS)
         self.DataProvider.AddModel(self.MainModel, "nowplaying_model")
-        self.UI.NPQ_LSV_mainqueue.setModel(self.MainModel)
+        self.MainView.setModel(self.MainModel)
 
         self.Delegate = NowPlaying_ItemDelegate(self.MainModel)
         self.Delegate._theme = self.UI.Theme
         self.Delegate.setFields("artist", "title", "length", "filesize", "bitrate")
 
         self.UI.NPQ_LSV_mainqueue.setItemDelegate(self.Delegate)
+
+    def Function_Bindings(self):
+        self.UI.NPQ_LEDT_search.textChanged.connect(lambda q: self.MainModel.SearchModel(q, self.MainView))
 
 
 if __name__ == "__main__":

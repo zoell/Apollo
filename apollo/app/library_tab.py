@@ -4,7 +4,7 @@ from typing import Any, Callable
 from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Qt
 
-from apollo.app.dataproviders import SQLTableModel
+from apollo.app.dataproviders import SQLTableModel, GroupItems_Model
 
 
 class LibraryTab:
@@ -25,17 +25,25 @@ class LibraryTab:
 
         self.DataProvider = self.UI.DataProvider
         self.Init_DataModels()
-        self.FunctionBindidngs()
+        self.FunctionBindings()
 
-    def FunctionBindidngs(self):
+    def FunctionBindings(self):
         """
         Function Bindings
         """
-        self.UI.LDT_TBV_maintable.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.UI.LDT_TBV_maintable.customContextMenuRequested.connect(self.MainTable_ContextMenu)
+        self.MainView.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.MainView.customContextMenuRequested.connect(self.MainTable_ContextMenu)
 
-        self.UI.LBT_LSV_grouping.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.UI.LBT_LSV_grouping.customContextMenuRequested.connect(self.GroupTable_ContextMenu)
+        Header = self.MainView.horizontalHeader()
+        Header.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        Header.customContextMenuRequested.connect(self.ContextMenu_HeaderMenu)
+
+        self.GroupView.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.GroupView.customContextMenuRequested.connect(lambda: self.GroupTable_ContextMenu(ToolButton = False))
+        self.GroupView.doubleClicked.connect(self.GroupModel.ApplyGroup)
+
+        self.UI.LBT_LEDT_search_group.textChanged.connect(lambda q: self.MainModel.SearchModel(q, self.MainView))
+        self.UI.LBT_TLB_search_group.setMenu(self.GroupTable_ContextMenu(ToolButton = True))
 
     def Init_DataModels(self):
         """
@@ -45,10 +53,31 @@ class LibraryTab:
         self.MainModel = SQLTableModel(self.UI.DBManager)
         self.MainModel.LoadTable("library", self.MainModel.DB_FIELDS)
         self.DataProvider.AddModel(self.MainModel, "library_model")
+        self.MainView.setModel(self.MainModel)
+
+        self.GroupView = self.UI.LBT_LSV_grouping
+        self.GroupModel = GroupItems_Model(self.UI.DBManager, self.MainView, "library", "artist")
+        self.DataProvider.AddModel(self.GroupModel, "library_group_model")
+        self.GroupView.setModel(self.GroupModel)
 
         self.NowPlayingQueue = self.DataProvider.GetModel("nowplaying_model")
-        self.MainView.setModel(self.MainModel)
-        self.UI.LBT_LSV_grouping.setModel(self.MainModel)
+
+    def ContextMenu_HeaderMenu(self):
+        """
+        Context menu Bindings for the Library Tab Header Functions
+        """
+        # Main Menu
+        lv_1 = QtWidgets.QMenu()
+
+        # adds the actions and menu related to Hide section
+        Model = self.MainView.model()
+        Header = self.MainView.horizontalHeader()
+        Actions = [self.UI.HeaderActionsBinding(index, Model, Header) for index in range(Model.columnCount())]
+        lv_1.addMenu("Hide Section").addActions(Actions)
+
+        # Execution
+        cursor = QtGui.QCursor()
+        lv_1.exec(cursor.pos())
 
     def MainTable_ContextMenu(self):
         """
@@ -116,16 +145,46 @@ class LibraryTab:
 
         # Ratings Menu
         lv_1_2 = MainMenu.addMenu("Rating")
-        BindMenuActions(lv_1_2, "0   star")
-        BindMenuActions(lv_1_2, "1   star")
-        BindMenuActions(lv_1_2, "1/5 stars")
-        BindMenuActions(lv_1_2, "2   stars")
-        BindMenuActions(lv_1_2, "2/5 stars")
-        BindMenuActions(lv_1_2, "3   stars")
-        BindMenuActions(lv_1_2, "3/5 stars")
-        BindMenuActions(lv_1_2, "4   stars")
-        BindMenuActions(lv_1_2, "4/5 stars")
-        BindMenuActions(lv_1_2, "5   stars")
+        self.UI.CreateRating_Action(lv_1_2,
+                                    0,
+                                    lambda: self.MainModel.UpdateTrack_Rating(self.MainView.selectedIndexes(), 0))
+
+        self.UI.CreateRating_Action(lv_1_2,
+                                    1,
+                                    lambda: self.MainModel.UpdateTrack_Rating(self.MainView.selectedIndexes(), 1))
+
+        self.UI.CreateRating_Action(lv_1_2,
+                                    1.5,
+                                    lambda: self.MainModel.UpdateTrack_Rating(self.MainView.selectedIndexes(), 1.5))
+
+        self.UI.CreateRating_Action(lv_1_2,
+                                    2,
+                                    lambda: self.MainModel.UpdateTrack_Rating(self.MainView.selectedIndexes(), 2))
+
+        self.UI.CreateRating_Action(lv_1_2,
+                                    2.5,
+                                    lambda: self.MainModel.UpdateTrack_Rating(self.MainView.selectedIndexes(), 2.5))
+
+        self.UI.CreateRating_Action(lv_1_2,
+                                    3,
+                                    lambda: self.MainModel.UpdateTrack_Rating(self.MainView.selectedIndexes(), 3))
+
+        self.UI.CreateRating_Action(lv_1_2,
+                                    3.5,
+                                    lambda: self.MainModel.UpdateTrack_Rating(self.MainView.selectedIndexes(), 3.5))
+
+        self.UI.CreateRating_Action(lv_1_2,
+                                    4,
+                                    lambda: self.MainModel.UpdateTrack_Rating(self.MainView.selectedIndexes(), 4))
+
+        self.UI.CreateRating_Action(lv_1_2,
+                                    4.5,
+                                    lambda: self.MainModel.UpdateTrack_Rating(self.MainView.selectedIndexes(), 4.5))
+
+        self.UI.CreateRating_Action(lv_1_2,
+                                    5,
+                                    lambda: self.MainModel.UpdateTrack_Rating(self.MainView.selectedIndexes(), 5))
+
 
         # Add To Playlist Menu
         lv_1_3 = MainMenu.addMenu("Add To Playlist")
@@ -151,14 +210,23 @@ class LibraryTab:
         cursor = QtGui.QCursor()
         MainMenu.exec(cursor.pos())
 
-    def GroupTable_ContextMenu(self):
+    def GroupTable_ContextMenu(self, ToolButton: bool):
         """
         Call the Custom Context Menu for the Grouping Table
         """
+        def BindMenuActions(Element: QtGui.QAction, Name: str, Method: Callable = lambda: print("NotImplemented")):
+            Element.addAction(f"{Name}").triggered.connect(Method)
+
         MainMenu = QtWidgets.QMenu()
 
-        Cursor = QtGui.QCursor()
-        MainMenu.exec(Cursor.pos())
+        BindMenuActions(MainMenu, "Action")
+
+        if ToolButton:
+            MainMenu.aboutToShow.connect(lambda: MainMenu.setMinimumWidth(128))
+            return MainMenu
+        else:
+            Cursor = QtGui.QCursor()
+            MainMenu.exec(Cursor.pos())
 
 
 if __name__ == "__main__":
