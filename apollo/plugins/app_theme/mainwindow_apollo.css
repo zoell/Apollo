@@ -71,6 +71,36 @@
 */
 
 /* Global Widget Sheets */
+    
+    /* QMenuBar */
+        QMenuBar {
+            background-color: $ui-background;
+            color: $text-01;
+            spacing: 3px; /* spacing between menu bar items */
+            min-height: 24px;
+            min-width: 48px;
+            border-bottom: 1px solid $ui-02;
+        }
+
+        QMenuBar::item {
+            background-color: $ui-background;
+            padding: 1px 4px;
+            background: transparent;
+            min-width: 48px;
+            border-right: 1px solid $ui-02;
+            border-bottom: 1px solid $ui-01;
+        }
+
+        QMenuBar::item:selected { /* when selected using mouse or keyboard */
+            background-color: $ui-01;
+            border-bottom: 1px solid $ui-background;
+        }
+
+        QMenuBar::item:pressed {
+            background-color: $ui-01;
+            border-bottom: 1px solid $ui-background;
+        }
+
     /* QTreeView */
         QTreeView {
             background-color: $ui-01;
@@ -200,6 +230,7 @@
             background-color: $ui-01;
             color: $text-02;
             margin: 0px;
+            min-width: 98px;
         }
 
         QMenu::separator {
@@ -219,6 +250,7 @@
             padding: 4px 24px 4px 24px;
             color: $text-01;
             border: 1px solid transparent;
+            min-width: 128px;
             /* Reserve space for selection border */
         }
 
@@ -281,7 +313,7 @@
         }
 
         QMenu::right-arrow {
-            image: url(":/icon_pack/png/32/branch_closed_icon-01.png");
+            image: url(":/icon_pack/png/24/chevron-right_icon-01.png");
             height: 20px;
             width: 20px;
         }
@@ -1618,7 +1650,7 @@
         }
 
         QWidget#SubW_FR_queue {
-            background-color: $ui-01;
+            background-color: $ui-background;
             border: 0px solid Transparent;
             min-width: 64px;
             padding-bottom: 1px;
@@ -1810,7 +1842,6 @@
                 QToolButton::menu-arrow:hover#LBT_TLB_search_group {
                     image: url(":/icon_pack/png/24/chevron-down_icon-01.png");
                 }
-
 
 
 /* LibraryManager App */
@@ -2211,6 +2242,7 @@
 
     /* FileManager Tab */
 
+
 /* FileExplorer Sub App */
     QWidget#FileExp_centralwidget {
         background-color: $ui-background;
@@ -2268,6 +2300,7 @@
         border: 1px solid Transparent;
         padding: 8px;
     }
+
 
 /* LEDT_Dialog Sub App */
     QWidget#LEDT_Dialog_centralwidget {

@@ -10,10 +10,22 @@ from PySide6 import QtCore
 from apollo.db import DataBaseManager, FileManager, LibraryManager
 from apollo.db import DBStructureError, QueryBuildFailed, QueryExecutionFailed
 
-from tests.main.fixtures import DBManager, Gen_DbTable_Data
-from tests.main.fixtures import LibraryManager_connected, TempFilled_DB, del_TempFilled_DB
+from tests.testing_tools.tools import DBManager, Gen_DbTable_Data
+from tests.testing_tools.tools import LibraryManager_connected, TempFilled_DB, del_TempFilled_DB
 
 #### Tests ####################################################################
+class Test_DBStructureError: ...
+
+
+class Test_QueryBuildFailed: ...
+
+
+class Test_QueryExecutionFailed: ...
+
+
+class Test_Connection: ...
+
+
 class Test_DataBaseManager:
 
     @classmethod
@@ -307,6 +319,8 @@ class Test_DataBaseManager:
         # checks for empty
         assert (Manager.Toptrack("nowplaying") == "")
 
+
+class Test_FileManager: ...
 
 
 class Test_LibraryManager:

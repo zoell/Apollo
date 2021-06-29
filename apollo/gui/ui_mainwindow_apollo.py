@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'mainwindow_apollozVPPQT.ui'
+## Form generated from reading UI file 'mainwindow_apolloEklsoc.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.1.0
 ##
@@ -18,6 +18,12 @@ class Ui_MainWindow(object):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
         MainWindow.resize(800, 622)
+        self.actionDataBase_Manager = QAction(MainWindow)
+        self.actionDataBase_Manager.setObjectName(u"actionDataBase_Manager")
+        self.actionMetadata_Edit = QAction(MainWindow)
+        self.actionMetadata_Edit.setObjectName(u"actionMetadata_Edit")
+        self.actionFile_Orginizer = QAction(MainWindow)
+        self.actionFile_Orginizer.setObjectName(u"actionFile_Orginizer")
         self.MW_WDG_centeral_widget = QWidget(MainWindow)
         self.MW_WDG_centeral_widget.setObjectName(u"MW_WDG_centeral_widget")
         self.gridLayout_6 = QGridLayout(self.MW_WDG_centeral_widget)
@@ -92,7 +98,7 @@ class Ui_MainWindow(object):
         sizePolicy3.setHeightForWidth(self.LBT_TLB_search_group.sizePolicy().hasHeightForWidth())
         self.LBT_TLB_search_group.setSizePolicy(sizePolicy3)
         self.LBT_TLB_search_group.setMinimumSize(QSize(0, 0))
-        self.LBT_TLB_search_group.setMaximumSize(QSize(24, 24))
+        self.LBT_TLB_search_group.setMaximumSize(QSize(16777215, 24))
         self.LBT_TLB_search_group.setPopupMode(QToolButton.MenuButtonPopup)
         self.LBT_TLB_search_group.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
 
@@ -162,6 +168,7 @@ class Ui_MainWindow(object):
         self.MW_HSP_subwindows.addWidget(self.SubW_TABWG_MainTab)
         self.SubW_FR_queue = QFrame(self.MW_HSP_subwindows)
         self.SubW_FR_queue.setObjectName(u"SubW_FR_queue")
+        self.SubW_FR_queue.setMinimumSize(QSize(257, 535))
         self.SubW_FR_queue.setFrameShape(QFrame.StyledPanel)
         self.SubW_FR_queue.setFrameShadow(QFrame.Raised)
         self.gridLayout_3 = QGridLayout(self.SubW_FR_queue)
@@ -185,7 +192,7 @@ class Ui_MainWindow(object):
         self.NPQ_FR_search = QFrame(self.SubW_FR_queue)
         self.NPQ_FR_search.setObjectName(u"NPQ_FR_search")
         self.NPQ_FR_search.setMinimumSize(QSize(0, 24))
-        self.NPQ_FR_search.setMaximumSize(QSize(16777215, 24))
+        self.NPQ_FR_search.setMaximumSize(QSize(16777215, 16777215))
         self.horizontalLayout = QHBoxLayout(self.NPQ_FR_search)
         self.horizontalLayout.setSpacing(2)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
@@ -431,7 +438,14 @@ class Ui_MainWindow(object):
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
         self.menubar.setGeometry(QRect(0, 0, 800, 22))
+        self.menuFiles = QMenu(self.menubar)
+        self.menuFiles.setObjectName(u"menuFiles")
         MainWindow.setMenuBar(self.menubar)
+
+        self.menubar.addAction(self.menuFiles.menuAction())
+        self.menuFiles.addAction(self.actionDataBase_Manager)
+        self.menuFiles.addAction(self.actionMetadata_Edit)
+        self.menuFiles.addAction(self.actionFile_Orginizer)
 
         self.retranslateUi(MainWindow)
 
@@ -443,6 +457,9 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"Apollo", None))
+        self.actionDataBase_Manager.setText(QCoreApplication.translate("MainWindow", u"DataBase Manager", None))
+        self.actionMetadata_Edit.setText(QCoreApplication.translate("MainWindow", u"Metadata Edit", None))
+        self.actionFile_Orginizer.setText(QCoreApplication.translate("MainWindow", u"File Orginizer ", None))
         self.LBT_TLB_search_group.setText("")
         self.SubW_TABWG_MainTab.setTabText(self.SubW_TABWG_MainTab.indexOf(self.LBT_WDG_main), QCoreApplication.translate("MainWindow", u"Library", None))
         self.SubW_TABWG_MainTab.setTabText(self.SubW_TABWG_MainTab.indexOf(self.tab_2), QCoreApplication.translate("MainWindow", u"Tab 2", None))
@@ -462,5 +479,6 @@ class Ui_MainWindow(object):
         self.footer_PSB_volume.setText("")
         self.pushButton_20.setText("")
         self.footer_PSB_audio_control.setText("")
+        self.menuFiles.setTitle(QCoreApplication.translate("MainWindow", u"Files", None))
     # retranslateUi
 

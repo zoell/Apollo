@@ -2,14 +2,13 @@ import sys
 import os
 import pytest
 
-
 from PySide6 import QtGui
 from PySide6 import QtWidgets
 
 from apollo.plugins.app_theme import Theme
 from apollo import PathUtils as PU
 from apollo.utils import ThreadIt, dedenter
-from tests.main.fixtures import TESTFILES
+from tests.testing_tools.tools import TESTFILES
 
 SKIP = True
 
@@ -27,6 +26,7 @@ class Test_Theme:
         """
         if os.path.isdir(PU.PathJoin(f"{TESTFILES}", "TEST_theme")):
             PU.PurgeDirectory(PU.PathJoin(f"{TESTFILES}", "TEST_theme")) # cleanup
+
         if QtWidgets.QApplication.instance() and hasattr(cls, "App"):
             cls.App.quit()
             del cls.App
@@ -130,5 +130,5 @@ class Test_Theme:
 
         theme = Theme()
         Theme.ROOTPATH = TESTFILES
-        theme.LoadAppIcons("TEST_theme", "tests.testing_tools.test_files")
+        theme.LoadAppIcons("TEST_theme", "tests.testing_files")
         PU.PurgeDirectory(PU.PathJoin(f"{TESTFILES}", "TEST_theme")) # cleanup

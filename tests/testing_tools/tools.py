@@ -11,7 +11,7 @@ from apollo.db import DataBaseManager, FileManager, LibraryManager
 from apollo.db import DBStructureError, QueryBuildFailed, QueryExecutionFailed
 from apollo import PARENT_DIR
 
-TESTFILES = f"./testing_tools/test_files"
+TESTFILES = "testing_files"
 
 @pytest.fixture
 def Gen_TableModel(size = (20, 20)):

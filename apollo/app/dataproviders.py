@@ -1,4 +1,4 @@
-import sys
+import sys, re
 
 from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Qt
@@ -6,23 +6,19 @@ from PySide6.QtCore import Qt
 from apollo.db.library_manager import DataBaseManager
 from apollo import exe_time
 
+
 class SQLTableModel(QtGui.QStandardItemModel):
     """
-    Info: Extends the Standard Item Model
-    Args: None
-    Returns: None
-    Errors: None
+    Extends the Standard Item Model
     """
 
-    def __init__(self, Driver):
+    def __init__(self, Driver: DataBaseManager):
         """
-        Info: Constructor
-        Args: None
-        Returns: None
-        Errors: None
+        Class Constructor
         """
         super().__init__()
         self.DBManager = Driver
+        self.DB_NAME = Driver.DB_NAME
         self.DB_FIELDS = self.DBManager.db_fields
         self.DB_TABLE = None
 
@@ -46,7 +42,7 @@ class SQLTableModel(QtGui.QStandardItemModel):
             for Row in Keys:
                 self.appendRow(FilterData(Row))
 
-    def Data_atIndex(self, Indexes:[] = None, Rows:[] = None, Columns:[] = None):
+    def Data_atIndex(self, Indexes: list = [], Rows: list = [], Columns: list = []):
         """
         Info: returns all the data at selected Positions in a TBV
         Args:
@@ -58,26 +54,30 @@ class SQLTableModel(QtGui.QStandardItemModel):
         """
         Table = {}
 
-        if Columns == None:
+        if Columns == []:
             Columns = list(range(len(self.DB_FIELDS)))
 
-        if Indexes != None:
+        if Indexes != []:
             for index in Indexes:
                 Row = index.row()
                 Col = index.column()
                 if Col in Columns:
                     if Table.get(Row):
                         Table[Row].append(index.data())
-                    else:
+                    elif len(Columns) >= 2:
                         Table[Row] = [index.data()]
+                    else:
+                        Table[Row] = index.data()
 
-        if Rows != None:
+        if Rows != []:
             for Row in Rows:
                 for Col in Columns:
                     if Table.get(Row):
                         Table[Row].append(self.index(Row, Col).data())
-                    else:
+                    elif len(Columns) >= 2:
                         Table[Row] = [self.index(Row, Col).data()]
+                    else:
+                        Table[Row] = self.index(Row, Col).data()
 
         return list(Table.values())
 
@@ -138,50 +138,6 @@ class SQLTableModel(QtGui.QStandardItemModel):
         for col, data in enumerate(Header):
             self.setHeaderData(col, Orientation, str(data).replace("_", " ").title())
 
-    def SearchMask(self, View, Column = '', QueryString = None):
-        """
-        Info: Searches the query string and applies the mast where the data matches the query
-        Args:
-        QueryString: String
-            -> Data to searh for
-        View: QtTableVIew
-            -> View to apply mask to
-
-        Returns: None
-        Errors: None
-        """
-        if QueryString != None:
-            Text = QueryString.strip()
-        else:
-            Text = (self.Data_atIndex(View, [self.DB_FIELDS.index(Column)])[0])
-
-        if Text != "":
-            ResultSet = self.DBManager.exec_query(f"""
-            SELECT file_id FROM {self.DB_TABLE}
-            WHERE
-            album LIKE '%{Text}%'
-            OR albumartist LIKE '%{Text}%'
-            OR artist LIKE '%{Text}%'
-            OR author LIKE '%{Text}%'
-            OR composer LIKE '%{Text}%'
-            OR performer LIKE '%{Text}%'
-            OR title LIKE '%{Text}%'
-            OR lower(album) LIKE '%{Text}%'
-            OR lower(albumartist) LIKE '%{Text}%'
-            OR lower(artist) LIKE '%{Text}%'
-            OR lower(author) LIKE '%{Text}%'
-            OR lower(composer) LIKE '%{Text}%'
-            OR lower(performer) LIKE '%{Text}%'
-            OR lower(title) LIKE '%{Text}%'
-            """)
-            for Row in range(self.rowCount()):
-                if self.index(Row, 0).data() in ResultSet:
-                    View.showRow(Row)
-                else:
-                    View.hideRow(Row)
-        else:
-            [View.showRow(Row) for Row in range(View.model().rowCount())]
-
     def RemoveItem(self, SelectedIndexes):
         """
         Info: Removes Item From Model
@@ -208,6 +164,110 @@ class SQLTableModel(QtGui.QStandardItemModel):
                 for R in selectedID:
                     self.removeRow(R - OFFSET)
                     OFFSET += 1
+
+    def UpdateTrack_Rating(self, Indexes: [QtCore.QModelIndex], rating: float):
+        """
+        Updates of the selected index and Refreshes data
+
+        Parameters
+        ----------
+        Indexes: [QtCore.QModelIndex]
+            index of rows to be updated
+        rating: float
+            rating to update to
+        """
+        Indexes = ", ".join([f"'{v}'" for v in self.Data_atIndex(Indexes = Indexes, Columns = [0])])
+        self.DBManager.exec_query(f"""
+        UPDATE {self.DB_TABLE}
+        SET rating = {rating}
+        WHERE
+            file_id IN ({Indexes})
+        """)
+        self.RefreshData()
+
+    def SearchModel(self, query: str, View: QtWidgets.QTableView):
+        """
+        Queries the tables and displays the matched rows
+
+        Parameters
+        ----------
+        query: str
+            Query string to search for
+        View: QtWidgets.QTableView
+            View to apply mask to
+        """
+        if query == "":
+            for Row in range(self.rowCount()):
+                View.showRow(Row)
+            return None
+
+        for Row in range(self.rowCount()):
+            Query = []
+            for Col in ["album", "albumartist", "artist", "title"]:
+                Col = self.DB_FIELDS.index(Col)
+                data = self.index(Row, Col).data()
+                Query.append(data.find(query) != -1)
+                Query.append(data.find(query.upper()) != -1)
+                Query.append(data.find(query.lower()) != -1)
+                Query.append(data.find(query.title()) != -1)
+
+            if any(Query):
+                View.showRow(Row)
+            else:
+                View.hideRow(Row)
+
+
+class GroupItems_Model(QtGui.QStandardItemModel):
+    """
+    Model to stre all teh data about grouping a given DB table and applies a mask on a view
+    """
+    def __init__(self, Driver: DataBaseManager, ParentView: QtWidgets.QTableView, Table: str, Field: str):
+        """
+        Class Constructor
+
+        Parameters
+        ----------
+        Driver: DataBaseManager
+            driver to use internally to run queries
+        ParentView: QtWidgets.QTableView
+            parent view that this Model masks
+        Table: str
+            Table name of the table to monitor
+        Field: str
+            grouping field
+        """
+        super().__init__()
+        self.Driver = Driver
+        self.ParentView = ParentView
+        self.DB_FIELDS = self.Driver.db_fields
+        self.DB_TABLE = Table
+        self.Group_Field = Field
+        self.LoadData(Field)
+
+    def ApplyGroup(self, Index: QtCore.QModelIndex):
+        """
+        Applies a mask using the field selected
+
+        Parameters
+        ----------
+        Index: item index double clicked
+        """
+        query = Index.data()
+        if query in ["", None]:
+            return None
+
+        Model = self.ParentView.model()
+        Model.SearchModel(query, self.ParentView)
+
+    def LoadData(self, Group: str):
+        ResultSet = self.Driver.exec_query(f"""
+        SELECT DISTINCT {Group}
+        FROM {self.DB_TABLE}
+        WHERE  ({Group} NOT IN ("", " "))
+        ORDER BY {Group}
+        """)
+        for Row in ResultSet:
+            self.appendRow(QtGui.QStandardItem(str(Row)))
 
 
 class ApolloDataProvider:
