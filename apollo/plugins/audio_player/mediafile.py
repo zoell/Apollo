@@ -1,6 +1,3 @@
-# type: ignore
-
-from apollo.utils import exe_time
 import json
 import os, sys, datetime
 from pathlib import Path
@@ -38,7 +35,6 @@ DBFIELDS = ["file_id", "path_id","file_name","file_path","album",
 # WavPack -> Yes
 # OptimFROG -> No
 # AIFF -> No
-
 
 
 class MP3:

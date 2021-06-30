@@ -50,7 +50,7 @@ class LibraryTab:
         Inits and Gets all te Data Models form the Data Provider
         """
         self.MainView = self.UI.LDT_TBV_maintable
-        self.MainModel = SQLTableModel(self.UI.DBManager)
+        self.MainModel = SQLTableModel(self.UI.DBManager, self.MainView)
         self.MainModel.LoadTable("library", self.MainModel.DB_FIELDS)
         self.DataProvider.AddModel(self.MainModel, "library_model")
         self.MainView.setModel(self.MainModel)
@@ -88,6 +88,11 @@ class LibraryTab:
 
         # Main Menu
         MainMenu = QtWidgets.QMenu()
+
+        BindMenuActions(MainMenu, "Refresh View",
+                        lambda: self.MainModel.RefreshData()
+                        )
+        MainMenu.addSeparator()
 
         BindMenuActions(MainMenu, "Play Now",
                         lambda: self.NowPlayingQueue.PlayNow(self.MainView.selectedIndexes())
@@ -193,18 +198,32 @@ class LibraryTab:
         lv_1_4 = MainMenu.addMenu("Send To")
 
         # Delete Action
-        BindMenuActions(MainMenu, "Delete")
-        BindMenuActions(MainMenu, "Remove")
+        BindMenuActions(MainMenu, "Delete", lambda: self.MainModel.RemoveItem(self.MainView.selectedIndexes(), True))
+        BindMenuActions(MainMenu, "Remove", lambda: self.MainModel.RemoveItem(self.MainView.selectedIndexes(), False))
         MainMenu.addSeparator()
 
         # Search Menu
         lv_1_5 = MainMenu.addMenu("Search")
-        BindMenuActions(lv_1_5, "Search Similar Artist")
-        BindMenuActions(lv_1_5, "Search Similar Album")
-        BindMenuActions(lv_1_5, "Search Similar Genre")
+        BindMenuActions(lv_1_5, "Search Similar Artist",
+                        lambda: self.MainModel.SearchSimilarField(self.MainView.selectedIndexes(), "artist")
+                        )
+
+        BindMenuActions(lv_1_5, "Search Similar Album",
+                        lambda: self.MainModel.SearchSimilarField(self.MainView.selectedIndexes(), "album")
+                        )
+
+        BindMenuActions(lv_1_5, "Search Similar Genre",
+                        lambda: self.MainModel.SearchSimilarField(self.MainView.selectedIndexes(), "genre")
+                        )
+
         lv_1_5.addSeparator()
-        BindMenuActions(lv_1_5, "Open In Browser")
-        BindMenuActions(lv_1_5, "Locate In Explorer")
+        BindMenuActions(lv_1_5, "Open In Browser",
+                        lambda: self.MainModel.SearchBrowser(self.MainView.selectedIndexes())
+                        )
+
+        BindMenuActions(lv_1_5, "Locate In Explorer",
+                        lambda: self.MainModel.SearchFileSystem(self.MainView.selectedIndexes())
+                        )
 
         # Execution
         cursor = QtGui.QCursor()
@@ -219,7 +238,12 @@ class LibraryTab:
 
         MainMenu = QtWidgets.QMenu()
 
-        BindMenuActions(MainMenu, "Action")
+        BindMenuActions(MainMenu, "Group By Artist", lambda: self.GroupModel.LoadData("artist"))
+        BindMenuActions(MainMenu, "Group By Album", lambda: self.GroupModel.LoadData("album"))
+        BindMenuActions(MainMenu, "Group By Date", lambda: self.GroupModel.LoadData("date"))
+        BindMenuActions(MainMenu, "Group By Genre", lambda: self.GroupModel.LoadData("genre"))
+        BindMenuActions(MainMenu, "Group By Folder", lambda: self.GroupModel.LoadData("folder"))
+        BindMenuActions(MainMenu, "Group By Rating", lambda: self.GroupModel.LoadData("rating"))
 
         if ToolButton:
             MainMenu.aboutToShow.connect(lambda: MainMenu.setMinimumWidth(128))

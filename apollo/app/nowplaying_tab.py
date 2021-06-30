@@ -12,11 +12,11 @@ class NowPlayingQueue(SQLTableModel):
     """
     Utilities for data and communication between tabs
     """
-    def __init__(self, Driver: QtSql.QSqlDriver):
+    def __init__(self, Driver: QtSql.QSqlDriver, ParentView: QtWidgets.QAbstractItemView):
         """
         Class Constructor
         """
-        super().__init__(Driver)
+        super().__init__(Driver, ParentView)
         self.PlayingQueue = PlayingQueue()
 
     def Get_columnData(self, Column: int):
@@ -356,7 +356,7 @@ class NowPlayingTab:
         Inits all the Data Model
         """
         self.MainView = self.UI.NPQ_LSV_mainqueue
-        self.MainModel = NowPlayingQueue(self.UI.DBManager)
+        self.MainModel = NowPlayingQueue(self.UI.DBManager, self.MainView)
         self.MainModel.LoadTable("nowplaying", self.MainModel.DB_FIELDS)
         self.DataProvider.AddModel(self.MainModel, "nowplaying_model")
         self.MainView.setModel(self.MainModel)

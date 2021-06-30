@@ -5,8 +5,6 @@ import time
 from pyo import DataTable, TableRead, TrigFunc
 import av
 
-from apollo import exe_time
-
 
 class BufferInfo():
     """
@@ -70,7 +68,6 @@ class BufferInfo():
         else:
             for key in range(len(self.FrameInfo.keys()), value):
                 self.FrameInfo.__setitem__(key, False)
-
 
 
 class AudioDecoder(Thread):
@@ -177,7 +174,6 @@ class AudioDecoder(Thread):
         stops the threads mainloop
         """
         self.DecoderStop.clear()
-
 
 
 class AudioTable(DataTable):
@@ -304,7 +300,6 @@ class AudioTable(DataTable):
 
     def decode(self):
         self.Decoder.decode()
-
 
 
 class AudioReader(TableRead):

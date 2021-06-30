@@ -38,7 +38,7 @@ class Connection:
     class that manages all the connections to a DB and executes queries in a context manager
     """
 
-    def __init__(self, db_name: str):
+    def __init__(self, db_name: str, commit: bool = True):
         """
         Class Constructor
 
@@ -49,16 +49,20 @@ class Connection:
         """
         super().__init__()
         self.DB = self.connect(db_name)
+        self.autocommit = commit
 
     def __enter__(self):
-        db_driver = QSqlDatabase.addDatabase("QSQLITE", str(random.random()))
-        db_driver.setDatabaseName(self.DB)
-        if db_driver.open() and db_driver.isValid() and db_driver.isOpen():
-            return db_driver
+        self.db_driver = QSqlDatabase.addDatabase("QSQLITE", str(random.random()))
+        self.db_driver.setDatabaseName(self.DB)
+        if self.db_driver.open() and self.db_driver.isValid() and self.db_driver.isOpen():
+            return self.db_driver
         else:
             raise ConnectionError(self.DB)
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
+        if hasattr(self, "db_driver"):
+            self.db_driver.commit()
+            del self.db_driver
         if any([exc_type, exc_value, exc_traceback]):
             print(f"exc_type: {exc_type}\nexc_value: {exc_value}\nexc_traceback: {exc_traceback}")
         QSqlDatabase.removeDatabase(str(random.random()))
@@ -205,7 +209,7 @@ class DataBaseManager:
 
         return True
 
-    def exec_query(self, query: str, column: Union[int, None] = None):  # Tested
+    def exec_query(self, query: str, column: Union[int, None] = None, commit: bool = True):  # Tested
         """
         Executes an QSqlQuery and returns the query to get results
 
@@ -217,25 +221,24 @@ class DataBaseManager:
             Query to execute
         column: Union[int, None]
             count of columns to get data from
-
+        commit: bool
+            auto_commit flag
         Returns
         -------
         List
             list of matrix of Row X Column, if NULL []
         """
         # creates a connection to the DB that is linked to the main class
-        with Connection(self.DB_NAME) as CON:
+        with Connection(self.DB_NAME, commit) as CON:
             if isinstance(query, str):
                 query_str = query
                 query = QSqlQuery(db = CON)
                 if not query.prepare(query_str):
                     connection_info = (str(CON))
-                    del CON
                     raise QueryBuildFailed(f"{connection_info}\n{query_str}")
             else:
                 # if creating of the Query fails it raises an exception
                 connection_info = (str(CON))
-                del CON
                 raise QueryBuildFailed(f"{connection_info}")
 
             # executes the given query
@@ -248,10 +251,8 @@ class DataBaseManager:
                     Query: {query.lastQuery()}
                     Connection: {connection_info}
                     """
-                del CON
                 raise QueryExecutionFailed(dedenter(msg, 12))
             else:
-                del CON
                 return self.fetch_all(query, column)
 
     def fetch_all(self, query: QSqlQuery, column: Union[int, None] = None):  # Tested
