@@ -5,25 +5,15 @@ from pathlib import Path
 from mutagen import easyid3
 import mutagen
 
+from apollo.db import DBFIELDS
 
-
-DBFIELDS = ["file_id", "path_id","file_name","file_path","album",
-            "albumartist","artist","author","bpm","compilation",
-            "composer","conductor","date","discnumber","discsubtitle",
-            "encodedby","genre","language","length","filesize",
-            "lyricist","media","mood","organization","originaldate",
-            "performer","releasecountry","replaygain_gain","replaygain_peak",
-            "title","tracknumber","version","website","album_gain",
-            "bitrate","bitrate_mode","channels","encoder_info","encoder_settings",
-            "frame_offset","layer","mode","padding","protected","sample_rate",
-            "track_gain","track_peak", "rating", "playcount"]
 
 # FileEXT Support
 
 # ASF  -> No
 # FLAC -> Yes
 # MP4 -> Yes
-# Monkey�s Audio -> No
+# Monkey's Audio -> No
 # MP3 -> Yes
 # Musepack -> No
 # Ogg Opus -> No
@@ -82,7 +72,9 @@ class MP3:
 
 
 class WAVE:
-
+    """
+    WAVE File format metadata reader class
+    """
     def __init__(self, path):
         self.FILEPATH = path
         self.Metadata = self.GetMetadata()
@@ -114,7 +106,9 @@ class WAVE:
 
 
 class FLAC:
-
+    """
+    FLAC File format metadata reader class
+    """
     def __init__(self, path):
         self.FILEPATH = path
         self.Metadata = self.GetMetadata()
@@ -145,7 +139,9 @@ class FLAC:
         return Artwork
 
 class MP4:
-
+    """
+    MP4 File format metadata reader class
+    """
     def __init__(self, path):
         self.FILEPATH = path
         self.Metadata = self.GetMetadata()
@@ -237,7 +233,6 @@ class MediaFile(dict):
         Artwork = self.Media.getArtwork()
         Artwork = {ArtworkInfo.get(keys):values  for keys, values in Artwork.items()}
         return Artwork
-
 
 
 if __name__ == "__main__":

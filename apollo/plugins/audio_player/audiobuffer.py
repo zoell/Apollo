@@ -6,7 +6,7 @@ from pyo import DataTable, TableRead, TrigFunc
 import av
 
 
-class BufferInfo():
+class BufferInfo:
     """
     Stores the Audio Buffer info
     """
@@ -223,7 +223,7 @@ class AudioTable(DataTable):
         self.cursor = 0
         self.table_size = int(self.duration * self.sample_rate)
 
-        #calling parent class init
+        # calling parent class init
         super().__init__(size = self.table_size, chnls = self.channels)
 
     def write(self, array, pos):
@@ -323,6 +323,7 @@ class AudioReader(TableRead):
         """
         super().__init__(table, freq = freq, loop = loop, interp = interp, mul = mul, add = add)
         TrigFunc(self["trig"], lambda: print("LOOP\n\n\n\n\n\n\n"))
+
 
 if __name__ == "__main__":
     from pyo import Server, TableRead
