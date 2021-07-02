@@ -2,10 +2,13 @@ import os
 import time
 from threading import Thread, Event
 from typing import Union
+from functools import reduce
 
 import av
 import numpy as np
 import pyo
+
+from apollo import exe_time
 
 
 class Buffer_Info:
@@ -22,32 +25,82 @@ class Buffer_Info:
         # size of time buffer in memory
         self.Time_ActualSize = kwargs.get("Time_ActualSize", 0)
         # size of frame buffer in memory
-        self.Frame_ActualSize = kwargs.get("Frame_ActualSize", self.CalculateFrame(self.Time_ActualSize))
+        self.Frame_ActualSize = kwargs.get("Frame_ActualSize", self.CalculateFrame(time = self.Time_ActualSize))
 
         # actual size of the time in file
         self.Time_VirtualSize = kwargs.get("Time_VirtualSize", 0)
         # actual size of the frames in file
-        self.Frame_VirtualSize = kwargs.get("Frame_VirtualSize", self.CalculateFrame(self.Time_VirtualSize))
+        self.Frame_VirtualSize = kwargs.get("Frame_VirtualSize", self.CalculateFrame(time = self.Time_VirtualSize))
 
         self.VirtualBuffer = dict.fromkeys(range(self.Frame_VirtualSize + 1), False)
+        self.VirtualCursor = 0
         self.ActualBuffer = dict.fromkeys(range(self.Frame_ActualSize + 1), False)
 
+    def FrameWrite(self, index: int):
+        """
+        Updates when the frame is written to the buffer
+
+        Parameters
+        ----------
+        index: int
+            index of the frame
+        """
+        self.ActualBuffer[index] = True
+        self.Update_VirtualBuffer(index)
+
+    def Update_VirtualBuffer(self, index: int):
+        """
+        Updates when the frame is written to the Virtual buffer
+
+        Parameters
+        ----------
+        index: int
+            index of the frame
+        """
+        if self.VirtualCursor >= len(self.VirtualBuffer):
+            self.VirtualCursor = 0
+            self.VirtualBuffer[self.VirtualCursor] = index
+        else:
+            self.VirtualBuffer[self.VirtualCursor] = index
+            self.VirtualCursor += 1
+
+    def IsWritten(self, packet: av.packet.Packet):
+        """
+        Gets the state of a frame if is written
+
+        Parameters
+        ----------
+        packet: av.packet.Packet
+            packet to check for
+
+        Returns
+        -------
+        bool
+            if frame is written
+        """
+        return self.ActualBuffer[self.CalculateFrame(pts = packet.pts)]
+
     @staticmethod
-    def CalculateFrame(time: float):
+    def CalculateFrame(time: Union[None, float] = None, pts: Union[None, int] = None):
         """
         Gets a rough estimate of the frame at the given time
 
         Parameters
         ----------
-        time: float
+        time: Union[None, float]
             time in float
+        pts: Union[None, int]
+            point to use
 
         Returns
         -------
         int
             frame
         """
-        return int(round(time / Buffer_Info.TIMEBASE_SEC))
+        if time is not None:
+            return int(round(time / Buffer_Info.TIMEBASE_SEC))
+        if pts is not None:
+            return int(round(pts / Buffer_Info.TIMEBASE_PTS))
 
     @staticmethod
     def CalculatePoint(time: float):
@@ -67,7 +120,7 @@ class Buffer_Info:
         return int(round(time / Buffer_Info.TIMEBASE_SEC)) * Buffer_Info.TIMEBASE_PTS
 
 
-class Audio_Table(pyo.DataTable):
+class AudioTable(pyo.DataTable):
 
     def __init__(self, path: str, duration: Union[int, None] = None, samplerate: int = 44100, channels: int = 2):
         """
@@ -86,21 +139,72 @@ class Audio_Table(pyo.DataTable):
         """
         self.file_path = path
         self.InputStream = av.open(path)
-        self.Decoder = Audio_Decoder(InputStream = self.InputStream, BufferTable = self, Name = id(path))
+        self.FrameInfo = self.GetFrameInfo(self.InputStream)
+        self.Decoder = AudioDecoder(InputStream = self.InputStream, Buffer = self)
 
         # Additional Info
         self.sample_rate = samplerate
-        self.channels = channels
         self.duration = int(self.InputStream.duration / 1000000) if (duration is None) else duration
         self.BufferInfo = Buffer_Info(Time_VirtualSize = self.duration,
                                       Time_ActualSize = int(self.InputStream.duration / 1000000))
         self.table_size = int(self.duration * self.sample_rate)
         self.cursor = 0
+        self.index = self.GetIndex()
 
-        super().__init__(size = self.table_size, chnls = self.channels)
+        super().__init__(size = self.table_size, chnls = channels)
         self.Decode()
 
-    def write(self, array: np.array, pos: int):
+    def GetIndex(self):
+        """
+        Draw a series of line segments between specified break-points.
+
+        Returns
+        -------
+        pyo.Linseg
+            line segment that is the index of the table
+        """
+        if self.BufferInfo.Time_ActualSize == self.BufferInfo.Time_VirtualSize:
+            Duration = self.BufferInfo.Time_ActualSize
+            Loop = False
+        else:
+            Duration = self.BufferInfo.Time_VirtualSize
+            Loop = True
+        return pyo.Linseg([(0, 0), (Duration, 1)], loop = Loop)
+
+    def GetFrameInfo(self, Stream: av.container.InputContainer):
+        """
+        Gets the frame info
+
+        Parameters
+        ----------
+        Stream: av.container.InputContainer
+            input stream to get frame from
+
+        Returns
+        -------
+        tuple
+            Frame info
+        """
+        for packet in Stream.demux(audio = 0):
+            for frame in packet.decode():
+                if frame.index == 1:
+                    Stream.seek(0)
+                    return tuple([frame.samples, len(frame.planes)])
+
+    def FillSample(self, obj, samples, pos):
+        cursor = pos
+        for sample in samples:
+            # writes so fast that no time to read quick
+            if cursor < self.table_size:
+                obj.put(sample, cursor)
+                cursor += 1
+            else:
+                self.Decoder.Pause()
+                cursor = 0
+                break
+        return cursor
+
+    def WriteBuffer(self, array: np.array, pos: int = None):
         """
         Adds given samples to the audio table.
 
@@ -111,30 +215,20 @@ class Audio_Table(pyo.DataTable):
         pos : int
             pos to add samples to
         """
-
-        def FillSamples(obj, samples, cursor):
-            for sample in samples:
-                # writes so fast that no time to read quick
-                if cursor >= self.table_size:
-                    cursor = 0
-                    obj.put(sample, cursor)
-                    self.Decoder.Pause()
-                else:
-                    obj.put(sample, cursor)
-                    cursor += 1
-            return cursor
-
+        # 'run' 4.4445 s
         array_channels = array.shape[0]
+        if pos is None:
+            pos = self.cursor
 
         # noramal one to one cration of channels
         if array_channels == self._chnls:
             for index, obj in enumerate(self._base_objs):
-                self.cursor = FillSamples(obj, array[index], pos)
+                self.cursor = self.FillSample(obj, array[index], pos)
 
         # for mono audio copies on both channels same audio and converts to dual
         elif (array_channels == 1) and (self._chnls == 2):
             for obj in self._base_objs:
-                self.cursor = FillSamples(obj, array[0], pos)
+                self.cursor = self.FillSample(obj, array[0], pos)
 
         # 2.1 channel audio support
         # 5.1 channel audio support
@@ -146,7 +240,7 @@ class Audio_Table(pyo.DataTable):
         # DEBUG
         self.refreshView()
 
-    def append_frame(self, frame):
+    def AppendFrame(self, frame: av.audio.frame.AudioFrame):
         """
         appends an audioframe and extends the audio table with given frame
 
@@ -155,10 +249,11 @@ class Audio_Table(pyo.DataTable):
         frame : av.audio.frame.AudioFrame
             A frame of audio
         """
-        # if not self.BufferInfo.isWritten(frame):
-        self.write(frame.to_ndarray(), self.cursor)
+        print(frame)
+        self.BufferInfo.FrameWrite(frame.index)
+        self.WriteBuffer(frame.to_ndarray())
 
-    def append_array(self, array):
+    def AppendArray(self, array: np.array):
         """
         appends the audio table with given samples.
 
@@ -167,7 +262,18 @@ class Audio_Table(pyo.DataTable):
         array : np.array
             array that contains audio samples
         """
-        self.write(array, self.cursor)
+        self.WriteBuffer(array)
+
+    def Seek(self, time: float):
+        """
+        seeks to a given time in an audio table
+
+        Parameters
+        ----------
+        time: int, float
+            -> time in seconds to seek to
+        """
+        return int(round(time / TIMEBASE_SEC)) * TIMEBASE_PTS
 
     def BufferEnd(self):
         """
@@ -181,17 +287,6 @@ class Audio_Table(pyo.DataTable):
         """
         self.Decoder.Decode()
 
-    def Seek(self, time: float):
-        """
-        seeks to a given time in an audio table
-
-        Parameters
-        ----------
-        time: int, float
-            -> time in seconds to seek to
-        """
-        return int(round(time / TIMEBASE_SEC)) * TIMEBASE_PTS
-
     def Close(self):
         """
         Exit function for the AudioTable
@@ -199,38 +294,80 @@ class Audio_Table(pyo.DataTable):
         self.Decoder.Kill()
 
 
-class Audio_Decoder(Thread):
+class AudioTable_Circular(AudioTable):
 
-    def __init__(self, InputStream: av.container.InputContainer, BufferTable: Audio_Table, Name: str):
+    def __init__(self, path: str, duration: Union[int, None] = None, samplerate: int = 44100, channels: int = 2):
+        super().__init__(path, duration, samplerate, channels)
+        self.ResidueSamples = np.empty((2, 1))
+
+    def WriteBuffer(self, array: np.array, pos: int = None, Residue: bool = False):
         """
-        Thread that decodes the given stream of Audio
+        Adds given samples to the audio table.
 
         Parameters
         ----------
-        InputStream: av.container.InputContainer
-            Input Stream To decode
-        BufferTable: Audio_Table
-            Audio Buffer to fill with Decoded Frames
-        Name: str
-            name of the given thread
+        array : np.array
+            array that contains audio samples
+        pos : int
+            pos to add samples to
+        Residue: bool
+            if this function need to disable Writing residue
         """
+        array_channels = array.shape[0]
+        array_length = array.shape[1]
+
+        if pos is None:
+            pos = self.cursor
+
+        if Residue:
+            self.WriteResidue()
+
+        # normal one to one creation of channels
+        if array_channels == self._chnls:
+            for index, obj in enumerate(self._base_objs):
+                self.cursor = self.FillSample(obj, array[index], pos)
+            if (array_length + pos) >= self.table_size:
+                self.ResidueSamples = np.asarray([chns[((array_length + pos) - self.table_size):] for chns in array])
+
+        # for mono audio copies on both channels same audio and converts to dual
+        elif (array_channels == 1) and (self._chnls == 2):
+            for obj in self._base_objs:
+                self.cursor = self.FillSample(obj, array[0], pos)
+            if (array_length + pos) >= self.table_size:
+                self.ResidueSamples = np.asarray(array[0][((array_length + pos) - self.table_size):])
+
+        # TODO: 2.1 channel audio support
+        # TODO: 5.1 channel audio support
+        # TODO: 7.1 channel audio support
+
+        else:
+            raise Exception("Audio Channels Not Compatable")
+
+        # DEBUG
+        self.refreshView()
+
+    def WriteResidue(self):
+        self.WriteBuffer(self.WriteResidue(), Residue = True)
+        self.ResidueSamples = np.empty((2, 1))
+
+
+class AudioDecoder(Thread):
+
+    def __init__(self, path: str = None, InputStream: av.container.InputContainer = None, Buffer: AudioTable = None):
         super().__init__()
-        self.name = f"AudioDecoder_{Name}"
-        self.InputStream = InputStream
-        self.BufferTable = BufferTable
-        self.InitEvents()
+        if path is not None and Buffer is not None:
+            self.file_path = path if path else ""
+            self.Stream = av.open(self.file_path)
+            self.Buffer = Buffer
+            self.name = f"AudioDecoder_{id(path)}"
+        elif InputStream is not None and Buffer is not None:
+            self.Stream = InputStream
+            self.Buffer = Buffer
+            self.name = f"AudioDecoder_{id(Buffer.file_path)}"
+        else:
+            raise ValueError("Invalid Arguments Passed to AudioDecoder")
+        self.CreateEvents()
         self.start()
-
-    def InitEvents(self):
-        """
-        Inits all the thread events taht can be triggered
-        """
-        self.Event_DeoderAlive = Event()
-        self.Event_DeoderAlive.set()
-
-        self.Event_Decode = Event()
-        self.Event_Pause = Event()
-        self.Pause()
 
     def run(self):
         """
@@ -243,12 +380,29 @@ class Audio_Decoder(Thread):
 
             if self.Event_Decode.isSet():
                 try:
-                    frame = next(self._DecodeFrame())
-                    self.BufferTable.append_frame(frame)
+                    frame = next(self.Decoder(False))
+                    # if frame.index == 1000:
+                    #     self.Kill()
+                    if frame != "WRITTEN":
+                        self.Buffer.AppendFrame(frame)
                 except StopIteration:
                     print("EOF")
+                    self.Pause()
+                continue
+        print("Decoder Stopped")
 
-    def _DecodeFrame(self):
+    def CreateEvents(self):
+        """
+        Inits all the thread events taht can be triggered
+        """
+        self.Event_DeoderAlive = Event()
+        self.Event_DeoderAlive.set()
+
+        self.Event_Decode = Event()
+        self.Event_Pause = Event()
+        self.Pause()
+
+    def Decoder(self, Check: bool):
         """
         Decoder Generator that Generates the frames
 
@@ -257,14 +411,19 @@ class Audio_Decoder(Thread):
         av.audio.frame
             frame that has been decoded
         """
-
         # actual decoding and demuxing of file
-        for packet in self.InputStream.demux(audio = 0):
-            if not (packet.size <= 0):
+        for packet in self.Stream.demux(audio = 0):
+            if packet.size <= 0:
+                break
+            if Check:
+                if not self.BufferTable.BufferInfo.IsWritten(packet):
+                    for frame in packet.decode():
+                        yield frame
+                else:
+                    yield "WRITTEN"
+            else:
                 for frame in packet.decode():
                     yield frame
-            else:
-                self.Pause()
 
     def Decode(self):
         """
@@ -287,10 +446,10 @@ class Audio_Decoder(Thread):
         self.Event_DeoderAlive.clear()
 
 
-class Audio_Reader(pyo.Pointer2):
+class AudioReader(pyo.Pointer2):
     index: pyo.Linseg
 
-    def __init__(self, table, interp = 4, autosmooth = True, mul = 1, add = 0):
+    def __init__(self, table: AudioTable):
         """
         Class Constructor
 
@@ -298,44 +457,21 @@ class Audio_Reader(pyo.Pointer2):
         ----------
         table: PyoTableObject
             Table containing the waveform samples.
-
-        index: PyoObject
-            Normalized position in the table between 0 and 1.
-
-        interp: int {1, 2, 3, 4}, optional
-            Choice of the interpolation method. Defaults to 4.
-            1: no interpolation
-            2: linear
-            3: cosinus
-            4: cubic
-
-        autosmooth: boolean, optional
-            If True, a lowpass filter, following the pitch, is applied on
-            the output signal to reduce the quantization noise produced
-            by very low transpositions. Defaults to True.
         """
         self.current_table = table
-        super().__init__(table, self.GetIndex(), interp = 4, autosmooth = True, mul = 1, add = 0)
+        super().__init__(self.current_table, self.current_table.index)
 
-    def Seek_Back(self, time: float): ...
-    def Seek_Front(self, time: float): ...
-
-    def GetIndex(self):
+    def setTable(self, Table: AudioTable):
         """
-        Draw a series of line segments between specified break-points.
+        Replaces the table attribute
 
-        Returns
-        -------
-        pyo.Linseg
-            line segment that is the index of the table
+        Parameters
+        ----------
+        Table: AudioTable
+            Tale to replace with
         """
-        if self.current_table.BufferInfo.Time_ActualSize == self.current_table.BufferInfo.Time_VirtualSize:
-            Duration = self.current_table.BufferInfo.Time_ActualSize
-            Loop = False
-        else:
-            Duration = self.current_table.BufferInfo.Time_VirtualSize
-            Loop = True
-        return pyo.Linseg([(0, 0), (Duration, 1)], loop = Loop)
+        self.setTable(Table)
+        self.setIndex(Table.index)
 
     def play(self, dur = 0, delay = 0):
         """
@@ -353,48 +489,51 @@ class Audio_Reader(pyo.Pointer2):
         delay: float, optional
             Delay, in seconds, before the object's activation. Defaults to 0.
         """
-        self.index.play()
+        self.index.play(dur, delay)
         super().play(dur, delay)
 
-    def out(self, chnl = 0, inc = 1, dur = 0, delay = 0):
+    def stop(self, wait=0):
         """
-        Start processing and send samples to audio output beginning at `chnl`.
+        Stop processing.
 
         This method returns `self`, allowing it to be applied at the object
         creation.
 
-        If `chnl` >= 0, successive streams increment the output number by
-        `inc` and wrap around the global number of channels.
+        .. note::
+            if the method setStopDelay(x) was called before calling stop(wait)
+            with a positive `wait` value, the `wait` value won't overwrite the
+            value given to setStopDelay for the current object, but will be
+            the one propagated to children objects. This allow to set a waiting
+            time for a specific object with setStopDelay whithout changing the
+            global delay time given to the stop method.
 
-        If `chnl` is negative, streams begin at 0, increment
-        the output number by `inc` and wrap around the global number of
-        channels. Then, the list of streams is scrambled.
-
-        If `chnl` is a list, successive values in the list will be
-        assigned to successive streams.
+            Fader and Adsr objects ignore waiting time given to the stop
+            method because they already implement a delayed processing
+            triggered by the stop call.
 
         Parameters
         ----------
-        chnl: int, optional
-            Physical output assigned to the first audio stream of the
-            object. Defaults to 0.
-        inc: int, optional
-            Output channel increment value. Defaults to 1.
-        dur: float, optional
-            Duration, in seconds, of the object's activation. The default
-            is 0 and means infinite duration.
-        delay: float, optional
-            Delay, in seconds, before the object's activation.
-            Defaults to 0.
+
+            wait: float, optional
+                Delay, in seconds, before the process is actually stopped.
+                If autoStartChildren is activated in the Server, this value
+                is propagated to the children objects. Defaults to 0.
         """
-        self.index.play()
-        super().out(chnl = 0, inc = 1, dur = 0, delay = 0)
+        self.index.stop(wait)
+        super().stop(wait)
+        return self
+
+
+class AudioPlayer:
+
+    def __init__(self, PlayingQueue: Union[list]):
+        self.ActiveReaders = []
+        self.PlayingQueue = PlayingQueue
 
 
 if __name__ == "__main__":
-    Server = pyo.Server().boot()
-    Queue = Audio_Table("D:\\music\\AviciiForever Yours.mp3")
-    Reader = Audio_Reader(Queue)
-    Reader.out()
-    Reader.index.graph()
+    Server = pyo.Server().boot().start()
+    Server.setAmp(0.01)
+    paths = [os.path.join(r"D:\music", path) for path in os.listdir(r"D:\music")]
+    Player = AudioPlayer(paths)
     Server.gui()
