@@ -1,3 +1,4 @@
+import os.path
 import sys, re
 
 from PySide6 import QtWidgets, QtGui, QtCore
@@ -11,13 +12,13 @@ class SQLTableModel(QtGui.QStandardItemModel):
     """
     Extends the Standard Item Model
     """
-
-    def __init__(self, Driver: DataBaseManager):
+    def __init__(self, Driver: DataBaseManager, ParentView: QtWidgets.QAbstractItemView):
         """
         Class Constructor
         """
         super().__init__()
         self.DBManager = Driver
+        self.ParentView = ParentView
         self.DB_NAME = Driver.DB_NAME
         self.DB_FIELDS = self.DBManager.db_fields
         self.DB_TABLE = None
@@ -138,7 +139,7 @@ class SQLTableModel(QtGui.QStandardItemModel):
         for col, data in enumerate(Header):
             self.setHeaderData(col, Orientation, str(data).replace("_", " ").title())
 
-    def RemoveItem(self, SelectedIndexes):
+    def RemoveItem(self, SelectedIndexes: [QtCore.QModelIndex], Delete: bool):
         """
         Info: Removes Item From Model
         Args:
@@ -155,6 +156,11 @@ class SQLTableModel(QtGui.QStandardItemModel):
             self.DBManager.exec_query(f"DELETE FROM {self.DB_TABLE} WHERE file_id IN ({selectedID})")
             self.RefreshData()
             Paths = self.Data_atIndex(SelectedIndexes, [self.DB_FIELDS.index("file_path")])
+            #TODO: ENABLE IN PRODUCTION
+            # if Delete:
+            #     for path in Paths:
+            #         if os.path.isfile(path):
+            #             os.remove(path)
         else:
             selectedID = set([index.row() for index in SelectedIndexes.selectedIndexes()])
             if len(selectedID) == self.rowCount():
@@ -164,6 +170,7 @@ class SQLTableModel(QtGui.QStandardItemModel):
                 for R in selectedID:
                     self.removeRow(R - OFFSET)
                     OFFSET += 1
+
 
     def UpdateTrack_Rating(self, Indexes: [QtCore.QModelIndex], rating: float):
         """
@@ -216,10 +223,54 @@ class SQLTableModel(QtGui.QStandardItemModel):
             else:
                 View.hideRow(Row)
 
+    def SearchBrowser(self, Indexes: [QtCore.QModelIndex]):
+        """
+        Queries a browser
+
+        Parameters
+        ----------
+        Indexes: [QtCore.QModelIndex]
+            data to use
+        """
+        for index in Indexes:
+            if index.column() == self.DB_FIELDS.index("file_name"):
+                query = index.data()
+                break
+
+    def SearchFileSystem(self, Indexes: [QtCore.QModelIndex]):
+        """
+        Searches File system for the given Path
+
+        Parameters
+        ----------
+         Indexes: [QtCore.QModelIndex]
+            Data to use to run the query
+        """
+        for index in Indexes:
+            if index.column() == self.DB_FIELDS.index("file_path"):
+                query = index.data()
+
+    def SearchSimilarField(self, Indexes: [QtCore.QModelIndex], Filed: str):
+        """
+        Searches the parent VIew for the Similar Fields
+
+        Parameters
+        ----------
+        Indexes: [QtCore.QModelIndex]
+            data to search for matches
+        Filed: str
+            Field to search in
+        """
+        for index in Indexes:
+            if index.column() == self.DB_FIELDS.index(Filed):
+                query = index.data()
+                break
+        if query not in ["", None, " "]:
+            self.SearchModel(query, self.ParentView)
 
 class GroupItems_Model(QtGui.QStandardItemModel):
     """
-    Model to stre all teh data about grouping a given DB table and applies a mask on a view
+    Model to set all the data about grouping a given DB table and applies a mask on a view
     """
     def __init__(self, Driver: DataBaseManager, ParentView: QtWidgets.QTableView, Table: str, Field: str):
         """
@@ -256,23 +307,53 @@ class GroupItems_Model(QtGui.QStandardItemModel):
         if query in ["", None]:
             return None
 
-        Model = self.ParentView.model()
-        Model.SearchModel(query, self.ParentView)
+        if self.Group_Field == "folder":
+            Col = self.DB_FIELDS.index("file_path")
+            Model = self.ParentView.model()
+            for Row in range(Model.rowCount()):
+                data = Model.index(Row, Col).data()
+                if data.find(query) != -1:
+                    self.ParentView.showRow(Row)
+                else:
+                    self.ParentView.hideRow(Row)
+
+        elif self.Group_Field in ["rating", "genre", "date", "artist", "album"]:
+            Col = self.DB_FIELDS.index(self.Group_Field)
+            Model = self.ParentView.model()
+            for Row in range(Model.rowCount()):
+                data = Model.index(Row, Col).data()
+                if data == query:
+                    self.ParentView.showRow(Row)
+                else:
+                    self.ParentView.hideRow(Row)
+        else:
+            return None
 
     def LoadData(self, Group: str):
-        ResultSet = self.Driver.exec_query(f"""
-        SELECT DISTINCT {Group}
-        FROM {self.DB_TABLE}
-        WHERE  ({Group} NOT IN ("", " "))
-        ORDER BY {Group}
-        """)
+        self.Group_Field = Group
+        if Group == "folder":
+            ResultSet = self.Driver.exec_query(r"""
+            SELECT DISTINCT REPLACE(file_path, '\'||file_name, '')
+            FROM library
+            WHERE  (file_path NOT IN ("", " "))
+            ORDER BY file_path
+            """)
+        else:
+            ResultSet = self.Driver.exec_query(f"""
+            SELECT DISTINCT {Group}
+            FROM {self.DB_TABLE}
+            WHERE  ({Group} NOT IN ("", " "))
+            ORDER BY {Group}
+            """)
+        self.removeRows(0, self.rowCount())
         for Row in ResultSet:
             self.appendRow(QtGui.QStandardItem(str(Row)))
 
 
 class ApolloDataProvider:
-    """"""
-
+    """
+    Data and Model Provider for all classes
+    """
     def __init__(self):
         """Constructor"""
         self.DataModels = {}
