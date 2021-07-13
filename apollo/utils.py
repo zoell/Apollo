@@ -25,9 +25,11 @@ def exe_time(method):
             name = kw.get('log_name', method.__name__.upper())
             kw['log_time'][name] = int((te - ts) * 1000)
         else:
-            print ('%r %2.4f s' % (method.__name__, (te - ts)))
+            print('%r %2.4f s' % (method.__name__, (te - ts)))
         return result
+
     return timed
+
 
 def tryit(method):
     def exe(*args, **kwargs):
@@ -47,11 +49,13 @@ def tryit(method):
                 name = kwargs.get('log_name', method.__name__.upper())
                 kwargs['log_time'][name] = int((te - ts) * 1000)
             else:
-                print ('%r %2.4f s' % (method.__name__, (te - ts)))
+                print('%r %2.4f s' % (method.__name__, (te - ts)))
             return result
         except Exception as e:
-                print (f"{method.__name__}: {e}")
+            print(f"{method.__name__}: {e}")
+
     return exe
+
 
 def ThreadIt(method):
     def Exe(*args, **kw):
@@ -65,7 +69,9 @@ def ThreadIt(method):
         """
         Thread = threading.Thread(target = method, args = args, kwargs = kw, name = method.__name__)
         Thread.start()
+
     return Exe
+
 
 def dedenter(string = '', indent_size = 4):
     """
@@ -84,8 +90,8 @@ def dedenter(string = '', indent_size = 4):
         output string that is dedented
     """
     string = string.expandtabs().splitlines()
-    string = ("\n".join([line[(indent_size):] for line in string]))
-    return (string.strip("\n"))
+    string = ("\n".join([line[indent_size:] for line in string]))
+    return string.strip("\n")
 
 
 class PlayingQueue:
@@ -93,6 +99,7 @@ class PlayingQueue:
     PlayingQueue is used as a track queue to manage track Playback.
     Base datatype used as the queue is an List and related operations of lists.
     """
+
     # management of index scaling when indexes are modified
     def __init__(self, circ = False):
         self.PlayingQueue = []
@@ -117,8 +124,8 @@ class PlayingQueue:
         Index : int, optional
             Index to add elements to, by default None
         """
-        #element insertion to an empty queue
-        if Index == None:
+        # element insertion to an empty queue
+        if Index is None:
             self.PlayingQueue.extend(element)
 
         # element insertion at an index
@@ -132,7 +139,6 @@ class PlayingQueue:
                 if self.CurrentIndex >= Index:
                     self.CurrentIndex += len(element)
 
-
     def AddNext(self, element):
         """
         Adds Elements to the playing Queue after currest position
@@ -143,7 +149,6 @@ class PlayingQueue:
             A list of a single or multiple elements to add
         """
         self.AddElements(element, Index = self.GetPointer() + 1)
-
 
     def RemoveElements(self, Index = None, Start = None, End = None):
         """
@@ -159,9 +164,9 @@ class PlayingQueue:
             End Position of the slice, by default None
         """
         # removing single element from an index
-        if Index != None and (Start == None or End == None):
+        if Index is not None and (Start is None or End is None):
             self.PlayingQueue.pop(Index)
-            if  self.CurrentIndex > Index:
+            if self.CurrentIndex > Index:
                 self.CurrentIndex -= 1
             elif self.CurrentIndex == Index:
                 self.JumpPos(0)
@@ -169,7 +174,7 @@ class PlayingQueue:
                 pass
 
         # slice removal
-        if Start != None and End != None:
+        if Start is not None and End is not None:
             if End >= len(self.PlayingQueue):
                 del self.PlayingQueue[Start:]
                 if Start <= self.CurrentIndex:
@@ -185,18 +190,17 @@ class PlayingQueue:
                     self.CurrentIndex -= offset
 
         # Only start Args given
-        if Start != None and End == None:
+        if Start is not None and End is None:
             del self.PlayingQueue[Start:]
             if Start <= self.CurrentIndex:
                 self.JumpPos(0)
 
         # Complete dump of queue
-        if Index == None and Start == None and End == None:
+        if Index is None and Start is None and End is None:
             self.PlayingQueue = []
             self.CurrentIndex = 0
 
         # index scaling when elements are removed
-
 
     def IncrementPointer(self, by = 1):
         """
@@ -227,8 +231,6 @@ class PlayingQueue:
                 self.CurrentIndex = 0
                 raise IndexError()
         return self.CurrentIndex
-
-
 
     def DecrementPointer(self, by = 1):
         """
@@ -262,7 +264,6 @@ class PlayingQueue:
 
         return self.CurrentIndex
 
-
     def JumpPos(self, Pos):
         """
         Random access of queue
@@ -275,7 +276,6 @@ class PlayingQueue:
         if Pos in range(len(self.PlayingQueue)):
             self.CurrentIndex = Pos
 
-
     def SetCircular(self, bool_):
         """
         Enables and disables endpoint Circling of a list
@@ -286,7 +286,6 @@ class PlayingQueue:
             sets if the queue wraps around itself
         """
         self.IsCircular = bool_
-
 
     def GetPointer(self):
         """
@@ -299,7 +298,6 @@ class PlayingQueue:
         """
         return self.CurrentIndex
 
-
     def GetCurrent(self):
         """
         Gets the current value at index
@@ -309,9 +307,8 @@ class PlayingQueue:
         any
             item at given index
         """
-        if self.CurrentIndex != None:
+        if self.CurrentIndex is not None:
             return self.PlayingQueue[self.CurrentIndex]
-
 
     def GetNext(self):
         """
@@ -325,7 +322,6 @@ class PlayingQueue:
         self.IncrementPointer()
         return self.GetCurrent()
 
-
     def GetPrevious(self):
         """
         gets the previous index
@@ -337,7 +333,6 @@ class PlayingQueue:
         """
         self.DecrementPointer()
         return self.GetCurrent()
-
 
     def GetQueue(self):
         """
@@ -355,6 +350,7 @@ class PathUtils:
     """
     Path related Utility functions
     """
+
     def __init__(self): ...
 
     @staticmethod
@@ -399,13 +395,13 @@ class PathUtils:
         return pathvalidate.is_valid_filepath(path)
 
     @staticmethod
-    def WinFileValidator(file):
+    def WinFileValidator(file: str):
         """
         file name validator function that checks for OS appropiate paths
 
         Parameters
         ----------
-        path : String
+        file : str
             string of directory or file path
 
         Returns
@@ -420,11 +416,6 @@ class PathUtils:
         """
         Path Join function
 
-        Parameters
-        ----------
-        path : List(string, string)
-            string of directory or file path
-
         Returns
         -------
         String
@@ -434,7 +425,7 @@ class PathUtils:
 
     @staticmethod
     def isFileExt(file, ext):
-        return (os.path.splitext(file)[1] == ext)
+        return os.path.splitext(file)[1] == ext
 
 
 class ConfigManager:
@@ -445,6 +436,7 @@ class ConfigManager:
     >>> inst.Getvariable("ROOT/SUB/SUB1")
     >>> inst.Setvariable(["VALUE"], "ROOT/SUB/SUB1")
     """
+
     def __init__(self, config_dict = None):
         self.config_dict = config_dict
 
@@ -508,17 +500,12 @@ class ConfigManager:
         """
         Writes Data to the Config File
 
-        Parameters
-        ----------
-        file : str, optional
-            File Name To write Into, by default None
-
         Returns
         -------
         Boolean
             returns if the write was succesful
         """
-        if self.file == None:
+        if self.file is None:
             return False
         with open(self.file, "w") as FP:
             json.dump(self.config_dict, FP, indent = 4)
@@ -540,14 +527,15 @@ class ConfigManager:
         any
             returns value stored at a given path in the config
         """
-        if config == None:
+        if config is None:
             config = self.config_dict
 
         if isinstance(path, str):
-            if path.find(r"//") != -1: raise IndexError(path)
+            if path.find(r"//") != -1:
+                raise IndexError(path)
             path = path.split("/")
 
-        if len(path) >= 1 and not("" in path):
+        if len(path) >= 1 and not ("" in path):
             index = path.pop(0)
             data = config.get(index, False)
 
@@ -577,14 +565,15 @@ class ConfigManager:
         Boolean
             returns if operation was succesful
         """
-        if config == None:
+        if config is None:
             config = self.config_dict
 
         if isinstance(path, str):
-            if path.find(r"//") != -1: raise IndexError(path)
+            if path.find(r"//") != -1:
+                raise IndexError(path)
             path = path.split("/")
 
-        if len(path) >= 1 and not("" in path):
+        if len(path) >= 1 and not ("" in path):
             index = path.pop(0)
             if index in config.keys():
                 data = config.get(index, False)
@@ -610,13 +599,13 @@ class ConfigManager:
             return None
 
     def DropKey(self, path = '', config = None):
-        if config == None:
+        if config is None:
             config = self.config_dict
 
         if isinstance(path, str):
             path = path.split("/")
 
-        if len(path) >= 1 and not("" in path):
+        if len(path) >= 1 and not ("" in path):
             index = path.pop(0)
             if index in config.keys() and len(path) == 0:
                 del config[index]
@@ -632,10 +621,11 @@ class AppConfig(dict):
         """
         Manages all the app config loading and writing config manager that manages the config.cfg file
         """
+        super().__init__()
         self.Manager = ConfigManager()
         if Config == "DEFAULT":
-            self.Manager.file = (os.path.join(PARENT_DIR,"config.cfg"))
-            self.Manager.LoadConfig(os.path.join(PARENT_DIR,"config.cfg"))
+            self.Manager.file = (os.path.join(PARENT_DIR, "config.cfg"))
+            self.Manager.LoadConfig(os.path.join(PARENT_DIR, "config.cfg"))
         if isinstance(Config, dict):
             self.Manager.config_dict = Config
             self.Manager.file = None

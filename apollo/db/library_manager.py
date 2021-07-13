@@ -60,9 +60,9 @@ class Connection:
             raise ConnectionError(self.DB)
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
-        if hasattr(self, "db_driver"):
-            self.db_driver.commit()
-            del self.db_driver
+        self.db_driver.commit()
+        self.db_driver.close()
+        del self.db_driver
         if any([exc_type, exc_value, exc_traceback]):
             print(f"exc_type: {exc_type}\nexc_value: {exc_value}\nexc_traceback: {exc_traceback}")
         QSqlDatabase.removeDatabase(str(random.random()))
@@ -266,7 +266,7 @@ class DataBaseManager:
         query: QSqlQuery
             Query to fetch result set from
         column: Union[int, None], optional
-            index of Column to get data for, by default None
+            count of Column to get data for, by default None
 
         Returns
         -------
@@ -439,7 +439,7 @@ class DataBaseManager:
             Field = kwargs.get("FilterField")
 
         # a list of all file ID used for indexing
-        if kwargs.get("ID") != None and kwargs.get("Shuffled") == None:
+        if kwargs.get("ID") is not None and kwargs.get("Shuffled") is None:
             ID = ", ".join([f"'{v}'" for v in kwargs.get("ID")])
             self.exec_query(f"""
             CREATE VIEW IF NOT EXISTS {view_name} AS
@@ -454,7 +454,7 @@ class DataBaseManager:
             )
             """)
         # indexing items and shuffling the order
-        elif kwargs.get("Shuffled") != None:
+        elif kwargs.get("Shuffled") is not None:
             self.exec_query(f"""
             CREATE VIEW IF NOT EXISTS {view_name} AS
             SELECT *
@@ -550,7 +550,7 @@ class DataBaseManager:
             )
         """)
                  )
-        return query.pop().pop()
+        return query.pop()
 
     def TablePlaycount(self, tablename="library"):
         """
@@ -569,7 +569,7 @@ class DataBaseManager:
             )
         """)
                  )
-        return query.pop().pop()
+        return query.pop()
 
     def TablePlaytime(self, tablename="library"):
         """
@@ -590,7 +590,7 @@ class DataBaseManager:
             )
         """)
                  )
-        return datetime.timedelta(seconds=query.pop().pop())
+        return datetime.timedelta(seconds=query.pop())
 
     def TableAlbumcount(self, tablename="library"):
         """
@@ -610,7 +610,7 @@ class DataBaseManager:
             )
         """)
                  )
-        return query.pop().pop()
+        return query.pop()
 
     def TableArtistcount(self, tablename="library"):
         """
@@ -630,7 +630,7 @@ class DataBaseManager:
             )
         """)
                  )
-        return query.pop().pop()
+        return query.pop()
 
     def TableTrackcount(self, tablename="library"):
         """
@@ -650,7 +650,7 @@ class DataBaseManager:
             )
         """)
                  )
-        return query.pop().pop()
+        return query.pop()
 
     def TopAlbum(self, Tablename="library"):
         """
@@ -671,7 +671,7 @@ class DataBaseManager:
         """)
                  )
         if query != []:
-            return query.pop().pop()
+            return query.pop()
         else:
             return ""
 
@@ -694,7 +694,7 @@ class DataBaseManager:
         """)
                  )
         if query != []:
-            return query.pop().pop()
+            return query.pop()
         else:
             return ""
 
@@ -717,7 +717,7 @@ class DataBaseManager:
         """)
                  )
         if query != []:
-            return query.pop().pop()
+            return query.pop()
         else:
             return ""
 
@@ -741,7 +741,7 @@ class DataBaseManager:
         """)
                  )
         if query != []:
-            return query.pop().pop()
+            return query.pop()
         else:
             return ""
 

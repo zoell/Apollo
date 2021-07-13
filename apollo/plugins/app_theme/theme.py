@@ -485,4 +485,5 @@ class Theme:
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])
     inst = Theme()
+    inst.GenAppIcons(Theme.DefaultPallete(), r"D:\dev\Apollo-dev\apollo\plugins\app_theme\theme_packs\new")
     app.exec()
